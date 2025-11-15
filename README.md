@@ -155,3 +155,7 @@ Please refer to `PROJECT_PLAN.md` for the complete development roadmap and featu
 
 MIT
 
+---
+
+**Developed by Zain Shahid** | [GitHub](https://github.com/zainshahid630)
+
