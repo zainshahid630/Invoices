@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FBR Proxy Tester - Zazteck</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 { font-size: 2em; margin-bottom: 10px; }
+        .header p { opacity: 0.9; }
+        .content { padding: 30px; }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        textarea { min-height: 100px; font-family: monospace; }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .response {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        .response.success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+        }
+        .response.error {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+        .response pre {
+            background: rgba(0,0,0,0.05);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 FBR API Proxy Tester</h1>
+            <p>Zazteck - Test your FBR integration</p>
+        </div>
+        
+        <div class="content">
+            <div class="info-box">
+                <strong>ℹ️ Proxy URL:</strong> https://zazteck.com/fbr-api/fbr-proxy.php<br>
+                <strong>🔑 API Key:</strong> zazteck-fbr-2025-secure-key-<?php echo md5('zazteck.com'); ?>
+            </div>
+
+            <form id="testForm">
+                <div class="grid">
+                    <div class="form-group">
+                        <label>Endpoint</label>
+                        <select id="endpoint" required>
+                            <option value="validate">Validate (Sandbox)</option>
+                            <option value="post">Post (Sandbox)</option>
+                            <option value="validate_prod">Validate (Production)</option>
+                            <option value="post_prod">Post (Production)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>FBR Token</label>
+                        <input type="text" id="token" value="07de2afc-caed-3215-900b-b01720619ca4" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Seller NTN</label>
+                    <input type="text" id="sellerNTN" value="5419764" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Seller Business Name</label>
+                    <input type="text" id="sellerName" value="Zazteck" required>
+                </div>
+
+                <div class="grid">
+                    <div class="form-group">
+                        <label>Seller Province</label>
+                        <select id="sellerProvince" required>
+                            <option value="Punjab">Punjab</option>
+                            <option value="Sindh">Sindh</option>
+                            <option value="KPK">KPK</option>
+                            <option value="Balochistan">Balochistan</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Seller Address</label>
+                        <input type="text" id="sellerAddress" value="Lahore" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Buyer NTN</label>
+                    <input type="text" id="buyerNTN" value="1234567" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Buyer Business Name</label>
+                    <input type="text" id="buyerName" value="Test Customer" required>
+                </div>
+
+                <button type="submit" class="btn" id="submitBtn">
+                    🚀 Test FBR API
+                </button>
+            </form>
+
+            <div id="response" class="response"></div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('testForm');
+        const responseDiv = document.getElementById('response');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Testing...';
+            responseDiv.style.display = 'none';
+
+            const invoiceData = {
+                invoiceType: "Sale Invoice",
+                invoiceDate: new Date().toISOString().split('T')[0],
+                sellerNTNCNIC: document.getElementById('sellerNTN').value,
+                sellerBusinessName: document.getElementById('sellerName').value,
+                sellerProvince: document.getElementById('sellerProvince').value,
+                sellerAddress: document.getElementById('sellerAddress').value,
+                buyerNTNCNIC: document.getElementById('buyerNTN').value,
+                buyerBusinessName: document.getElementById('buyerName').value,
+                buyerProvince: "Sindh",
+                buyerAddress: "Karachi",
+                invoiceRefNo: "TEST-" + Date.now(),
+                scenarioId: "SN001",
+                buyerRegistrationType: "Unregistered",
+                items: [{
+                    hsCode: "0101.2100",
+                    productDescription: "Test Product",
+                    rate: "18%",
+                    uoM: "Numbers, pieces, units",
+                    quantity: 1,
+                    totalValues: 0,
+                    valueSalesExcludingST: 1000,
+                    fixedNotifiedValueOrRetailPrice: 0,
+                    salesTaxApplicable: 180,
+                    salesTaxWithheldAtSource: 0,
+                    extraTax: 0,
+                    furtherTax: 0,
+                    sroScheduleNo: "",
+                    fedPayable: 0,
+                    discount: 0,
+                    saleType: "Goods at standard rate (default)",
+                    sroItemSerialNo: ""
+                }]
+            };
+
+            try {
+                const response = await fetch('https://zazteck.com/fbr-api/fbr-proxy.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': 'zazteck-fbr-2025-secure-key-<?php echo md5('zazteck.com'); ?>'
+                    },
+                    body: JSON.stringify({
+                        endpoint: document.getElementById('endpoint').value,
+                        token: document.getElementById('token').value,
+                        data: invoiceData
+                    })
+                });
+
+                const data = await response.json();
+                
+                responseDiv.className = 'response ' + (response.ok ? 'success' : 'error');
+                responseDiv.innerHTML = `
+                    <h3>${response.ok ? '✅ Success!' : '❌ Error'}</h3>
+                    <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                responseDiv.style.display = 'block';
+            } catch (error) {
+                responseDiv.className = 'response error';
+                responseDiv.innerHTML = `
+                    <h3>❌ Network Error</h3>
+                    <p>${error.message}</p>
+                `;
+                responseDiv.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 Test FBR API';
+            }
+        });
+    </script>
+</body>
+</html>

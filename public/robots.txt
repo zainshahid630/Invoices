@@ -1,0 +1,21 @@
+# robots.txt for InvoiceFBR
+User-agent: *
+Allow: /
+Disallow: /seller/
+Disallow: /super-admin/
+Disallow: /api/
+Disallow: /template-builder/
+Disallow: /template-builder-pro/
+Disallow: /template-builder-advanced/
+Disallow: /setup-excel-template/
+
+# Sitemap location
+Sitemap: https://invoicefbr.com/sitemap.xml
+Sitemap: https://invoicefbr.com/sitemap-0.xml
+
+# Crawl-delay for specific bots
+User-agent: Googlebot
+Crawl-delay: 0
+
+User-agent: Bingbot
+Crawl-delay: 1

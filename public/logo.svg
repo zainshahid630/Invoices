@@ -1,0 +1,31 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient circle -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e0e7ff;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="200" height="200" rx="40" fill="url(#bgGradient)"/>
+  
+  <!-- Invoice icon -->
+  <g transform="translate(50, 40)">
+    <!-- Document -->
+    <path d="M10 10 L10 140 L90 140 L90 40 L60 10 Z" fill="url(#iconGradient)" stroke="#1e40af" stroke-width="3"/>
+    <!-- Folded corner -->
+    <path d="M60 10 L60 40 L90 40" fill="#93c5fd" stroke="#1e40af" stroke-width="3"/>
+    <!-- Lines -->
+    <line x1="20" y1="60" x2="70" y2="60" stroke="#1e40af" stroke-width="3" stroke-linecap="round"/>
+    <line x1="20" y1="80" x2="70" y2="80" stroke="#1e40af" stroke-width="3" stroke-linecap="round"/>
+    <line x1="20" y1="100" x2="50" y2="100" stroke="#1e40af" stroke-width="3" stroke-linecap="round"/>
+    <!-- FBR Badge -->
+    <circle cx="70" cy="120" r="15" fill="#10b981" stroke="#ffffff" stroke-width="2"/>
+    <text x="70" y="126" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">✓</text>
+  </g>
+</svg>

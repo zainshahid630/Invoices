@@ -1,0 +1,21 @@
+{
+  "name": "InvoiceFBR - FBR Compliant Invoicing Software",
+  "short_name": "InvoiceFBR",
+  "description": "Pakistan's #1 FBR-compliant invoicing software. Create professional invoices with automatic FBR integration.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "finance", "productivity"],
+  "lang": "en-PK",
+  "dir": "ltr"
+}
