@@ -64,7 +64,7 @@ export default function ServicesPage() {
               href="https://zazteck.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="group px-8 py-4 bg-white text-blue-600 rounded-xl hover:bg-gray-100 font-bold text-lg shadow-xl transition-all hover:shadow-2xl hover:-translate-y-1 inline-flex items-center justify-center gap-2"
+              className="group px-8 py-3 sm:py-4 w-full sm:w-auto max-w-[280px] sm:max-w-none mx-auto sm:mx-0 bg-white text-blue-600 rounded-xl hover:bg-gray-100 font-bold text-lg shadow-xl transition-all hover:shadow-2xl hover:-translate-y-1 inline-flex items-center justify-center gap-2"
             >
               <span>Visit Zazteck.com</span>
               <span className="group-hover:translate-x-1 transition-transform">→</span>
@@ -73,7 +73,7 @@ export default function ServicesPage() {
               href="https://wa.me/923164951361?text=Hi%2C%20I%20want%20to%20know%20more%20about%20Zazteck%20services"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-8 py-4 bg-green-500 text-white rounded-xl hover:bg-green-600 font-bold text-lg shadow-xl transition-all hover:shadow-2xl hover:-translate-y-1 inline-flex items-center justify-center gap-2"
+              className="px-8 py-3 sm:py-4 w-full sm:w-auto max-w-[280px] sm:max-w-none mx-auto sm:mx-0 bg-green-500 text-white rounded-xl hover:bg-green-600 font-bold text-lg shadow-xl transition-all hover:shadow-2xl hover:-translate-y-1 inline-flex items-center justify-center gap-2"
             >
               <span>💬</span>
               <span>WhatsApp Us</span>
@@ -83,10 +83,10 @@ export default function ServicesPage() {
       </section>
 
       {/* About Zazteck */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
+      <section className="py-10 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold text-gray-900 mb-6">
               About Zazteck
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
@@ -96,8 +96,8 @@ export default function ServicesPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
-            <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl border-2 border-blue-200 hover:border-blue-400 hover:shadow-xl transition-all">
+          <div className="grid md:grid-cols-3 gap-8 mb-4 sm:mb-10 xl:mb-16">
+            <div className="bg-gradient-to-br from-blue-50 to-white p-4 lg:p-8 rounded-2xl border-2 border-blue-200 hover:border-blue-400 hover:shadow-xl transition-all">
               <div className="text-5xl mb-4">🇵🇰</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">100% Pakistani</h3>
               <p className="text-gray-600 leading-relaxed">
@@ -106,7 +106,7 @@ export default function ServicesPage() {
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-2xl border-2 border-green-200 hover:border-green-400 hover:shadow-xl transition-all">
+            <div className="bg-gradient-to-br from-green-50 to-white p-4 lg:p-8 rounded-2xl border-2 border-green-200 hover:border-green-400 hover:shadow-xl transition-all">
               <div className="text-5xl mb-4">💡</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Local Expertise</h3>
               <p className="text-gray-600 leading-relaxed">
@@ -115,7 +115,7 @@ export default function ServicesPage() {
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-50 to-white p-8 rounded-2xl border-2 border-purple-200 hover:border-purple-400 hover:shadow-xl transition-all">
+            <div className="bg-gradient-to-br from-purple-50 to-white p-4 lg:p-8 rounded-2xl border-2 border-purple-200 hover:border-purple-400 hover:shadow-xl transition-all">
               <div className="text-5xl mb-4">💰</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Affordable Pricing</h3>
               <p className="text-gray-600 leading-relaxed">
@@ -128,10 +128,10 @@ export default function ServicesPage() {
       </section>
 
       {/* Our Services */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <section className="py-10 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold text-gray-900 mb-6">
               Our Services
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -141,12 +141,12 @@ export default function ServicesPage() {
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* Website Development */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all border border-gray-200">
+            <div className="bg-white rounded-2xl p-4 md:p-4 lg:p-8 shadow-lg hover:shadow-2xl transition-all border border-gray-200">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-3xl">
                   🌐
                 </div>
-                <h3 className="text-3xl font-bold text-gray-900">Website Development</h3>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Website Development</h3>
               </div>
               <p className="text-gray-600 mb-6 text-lg leading-relaxed">
                 Professional, modern websites that represent your brand perfectly. From simple landing 
@@ -180,18 +180,18 @@ export default function ServicesPage() {
               </ul>
               <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
                 <p className="text-sm text-gray-600 mb-2">Starting from</p>
-                <p className="text-3xl font-bold text-blue-600">PKR 25,000</p>
+                <p className="text-2xl lg:text-2xl lg:text-3xl font-bold text-blue-600">PKR 25,000</p>
                 <p className="text-sm text-gray-500 mt-1">One-time payment • Payment plans available</p>
               </div>
             </div>
 
             {/* Mobile App Development */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all border border-gray-200">
+            <div className="bg-white rounded-2xl p-4 md:p-4 lg:p-8 shadow-lg hover:shadow-2xl transition-all border border-gray-200">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center text-3xl">
                   📱
                 </div>
-                <h3 className="text-3xl font-bold text-gray-900">Mobile Apps</h3>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Mobile Apps</h3>
               </div>
               <p className="text-gray-600 mb-6 text-lg leading-relaxed">
                 Custom mobile applications for Android and iOS. Reach your customers directly 
@@ -225,18 +225,18 @@ export default function ServicesPage() {
               </ul>
               <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
                 <p className="text-sm text-gray-600 mb-2">Starting from</p>
-                <p className="text-3xl font-bold text-purple-600">PKR 150,000</p>
+                <p className="text-2xl lg:text-3xl font-bold text-purple-600">PKR 150,000</p>
                 <p className="text-sm text-gray-500 mt-1">Custom quote based on features</p>
               </div>
             </div>
 
             {/* Business Software */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all border border-gray-200">
+            <div className="bg-white rounded-2xl p-4 md:p-4 lg:p-8 shadow-lg hover:shadow-2xl transition-all border border-gray-200">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center text-3xl">
                   💼
                 </div>
-                <h3 className="text-3xl font-bold text-gray-900">Business Software</h3>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Business Software</h3>
               </div>
               <p className="text-gray-600 mb-6 text-lg leading-relaxed">
                 Custom software solutions tailored to your specific business needs. From inventory 
@@ -270,18 +270,18 @@ export default function ServicesPage() {
               </ul>
               <div className="bg-green-50 rounded-xl p-4 border border-green-200">
                 <p className="text-sm text-gray-600 mb-2">Starting from</p>
-                <p className="text-3xl font-bold text-green-600">PKR 100,000</p>
+                <p className="text-2xl lg:text-3xl font-bold text-green-600">PKR 100,000</p>
                 <p className="text-sm text-gray-500 mt-1">Custom quote based on requirements</p>
               </div>
             </div>
 
             {/* Digital Marketing */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all border border-gray-200">
+            <div className="bg-white rounded-2xl p-4 md:p-4 lg:p-8 shadow-lg hover:shadow-2xl transition-all border border-gray-200">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center text-3xl">
                   🎯
                 </div>
-                <h3 className="text-3xl font-bold text-gray-900">Digital Marketing</h3>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Digital Marketing</h3>
               </div>
               <p className="text-gray-600 mb-6 text-lg leading-relaxed">
                 Grow your online presence with our comprehensive digital marketing services. 
@@ -315,7 +315,7 @@ export default function ServicesPage() {
               </ul>
               <div className="bg-red-50 rounded-xl p-4 border border-red-200">
                 <p className="text-sm text-gray-600 mb-2">Starting from</p>
-                <p className="text-3xl font-bold text-red-600">PKR 15,000/month</p>
+                <p className="text-2xl lg:text-3xl font-bold text-red-600">PKR 15,000/month</p>
                 <p className="text-sm text-gray-500 mt-1">Monthly packages available</p>
               </div>
             </div>
@@ -324,10 +324,10 @@ export default function ServicesPage() {
       </section>
 
       {/* Why Choose Zazteck */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
+      <section className="py-10 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold text-gray-900 mb-6">
               Why Choose Zazteck?
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -384,9 +384,9 @@ export default function ServicesPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600">
+      <section className="py-10 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
+          <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold text-white mb-6">
             Ready to Transform Your Business?
           </h2>
           <p className="text-xl text-white/90 mb-8 leading-relaxed">
@@ -398,7 +398,7 @@ export default function ServicesPage() {
               href="https://zazteck.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-8 py-4 bg-white text-blue-600 rounded-xl hover:bg-gray-100 font-bold text-lg shadow-xl transition-all hover:shadow-2xl hover:-translate-y-1"
+              className="px-8 py-3 sm:py-4 w-full sm:w-auto max-w-[280px] sm:max-w-none mx-auto sm:mx-0 bg-white text-blue-600 rounded-xl hover:bg-gray-100 font-bold text-lg shadow-xl transition-all hover:shadow-2xl hover:-translate-y-1"
             >
               Visit Zazteck.com
             </a>
@@ -406,7 +406,7 @@ export default function ServicesPage() {
               href="https://wa.me/923164951361?text=Hi%2C%20I%20want%20to%20discuss%20my%20project"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-8 py-4 bg-green-500 text-white rounded-xl hover:bg-green-600 font-bold text-lg shadow-xl transition-all hover:shadow-2xl hover:-translate-y-1"
+              className="px-8 py-3 sm:py-4 w-full sm:w-auto max-w-[280px] sm:max-w-none mx-auto sm:mx-0 bg-green-500 text-white rounded-xl hover:bg-green-600 font-bold text-lg shadow-xl transition-all hover:shadow-2xl hover:-translate-y-1"
             >
               💬 WhatsApp Now
             </a>
