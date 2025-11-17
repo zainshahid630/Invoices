@@ -2,10 +2,21 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+
+  // Show sticky CTA bar after scrolling
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowStickyBar(window.scrollY > 800);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -96,7 +107,9 @@ export default function LandingPage() {
                   <span className="inline-block ml-2 group-hover:translate-x-1 transition-transform">→</span>
                 </Link>
                 <a
-                  href="#"
+                  href="https://wa.me/923164951361?text=Hi%2C%20I%27d%20like%20to%20see%20a%20demo%20of%20InvoiceFBR"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="px-8 py-4 border-2 border-blue-600 text-blue-600 bg-blue-50 rounded-xl hover:bg-blue-600 hover:text-white font-semibold text-center text-lg transition-all shadow-lg hover:shadow-xl"
                 >
                   Watch Demo
@@ -338,6 +351,34 @@ export default function LandingPage() {
               </ul>
             </div>
           </div>
+          
+          {/* CTA after Features */}
+          <div className="text-center mt-16">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 sm:p-12 shadow-2xl">
+              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+                Ready to Transform Your Invoicing?
+              </h3>
+              <p className="text-lg text-blue-100 mb-6 max-w-2xl mx-auto">
+                Join 130+ Pakistani businesses already saving time and staying FBR compliant
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  href="/register"
+                  className="px-8 py-4 bg-white text-blue-600 rounded-xl hover:bg-gray-100 font-semibold text-lg shadow-xl transition-all"
+                >
+                  Start Free Trial - No Credit Card Required
+                </Link>
+                <a
+                  href="https://wa.me/923164951361?text=Hi%2C%20I%20have%20questions%20about%20InvoiceFBR"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-8 py-4 border-2 border-white text-white rounded-xl hover:bg-white hover:text-blue-600 font-semibold text-lg transition-all"
+                >
+                  💬 Chat on WhatsApp
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -417,6 +458,21 @@ export default function LandingPage() {
                 <p className="text-gray-600">Send via WhatsApp or email. Track payments and status.</p>
               </div>
             </div>
+          </div>
+          
+          {/* CTA after How It Works */}
+          <div className="text-center mt-16">
+            <p className="text-xl text-gray-600 mb-6">
+              It's that simple! Start creating professional FBR-compliant invoices today
+            </p>
+            <Link
+              href="/register"
+              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 font-semibold text-lg shadow-xl shadow-blue-500/30 transition-all hover:shadow-2xl hover:shadow-blue-500/40"
+            >
+              Get Started Free
+              <span className="ml-2">→</span>
+            </Link>
+            <p className="text-sm text-gray-500 mt-4">7-day free trial • No credit card required • Cancel anytime</p>
           </div>
         </div>
       </section>
@@ -533,6 +589,30 @@ export default function LandingPage() {
                   <li>• Custom dashboards</li>
                 </ul>
               </div>
+            </div>
+          </div>
+          
+          {/* CTA after Services */}
+          <div className="text-center mt-16 bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl border-2 border-blue-200">
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">
+              Everything You Need in One Platform
+            </h3>
+            <p className="text-lg text-gray-600 mb-6 max-w-2xl mx-auto">
+              Stop juggling multiple tools. Get invoicing, FBR compliance, customer management, and analytics all in one place.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/register"
+                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 font-semibold text-lg shadow-xl transition-all"
+              >
+                Try All Features Free for 7 Days
+              </Link>
+              <a
+                href="#pricing"
+                className="px-8 py-4 border-2 border-blue-600 text-blue-600 rounded-xl hover:bg-blue-50 font-semibold text-lg transition-all"
+              >
+                View Pricing
+              </a>
             </div>
           </div>
         </div>
@@ -944,8 +1024,31 @@ export default function LandingPage() {
           </div>
           
           <div className="text-center mt-12">
+            <div className="inline-flex items-center px-6 py-3 bg-green-100 rounded-full mb-4">
+              <span className="text-green-700 font-semibold">⚡ Limited Time: Get 2 Months Free on Annual Plans!</span>
+            </div>
             <p className="text-gray-600 mb-4">All plans include 7-day free trial • No credit card required</p>
             <p className="text-sm text-gray-500">Need a custom solution? <a href="#contact" className="text-blue-600 hover:text-blue-700 font-semibold">Contact our sales team</a></p>
+            
+            {/* Trust badges */}
+            <div className="flex flex-wrap justify-center gap-6 mt-8 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <span className="text-green-500 text-xl">✓</span>
+                <span>130+ Active Users</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-green-500 text-xl">✓</span>
+                <span>2,500+ Invoices Generated</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-green-500 text-xl">✓</span>
+                <span>99.9% Uptime</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-green-500 text-xl">✓</span>
+                <span>24/7 Support</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -1010,11 +1113,42 @@ export default function LandingPage() {
               </p>
             </div>
           </div>
+          
+          {/* CTA after FAQ with Social Proof */}
+          <div className="text-center mt-16">
+            <div className="bg-white p-8 rounded-2xl shadow-xl border-2 border-blue-100">
+              <div className="flex justify-center mb-6">
+                <div className="flex -space-x-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border-4 border-white"></div>
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-600 border-4 border-white"></div>
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 border-4 border-white"></div>
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 border-4 border-white"></div>
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-400 to-red-600 border-4 border-white flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">+130</span>
+                  </div>
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                Join 130+ Businesses Already Using InvoiceFBR
+              </h3>
+              <p className="text-lg text-gray-600 mb-6">
+                "Best decision for our business. FBR compliance is now automatic!" - Ahmed, Karachi
+              </p>
+              <Link
+                href="/register"
+                className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 font-semibold text-lg shadow-xl transition-all"
+              >
+                Start Your Free Trial Now
+                <span className="ml-2">→</span>
+              </Link>
+              <p className="text-sm text-gray-500 mt-4">Setup takes less than 5 minutes</p>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 to-blue-800">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 to-blu
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold text-white mb-6">
             Ready to Streamline Your Invoicing?
@@ -1225,6 +1359,39 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Sticky CTA Bar */}
+      {showStickyBar && (
+        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-blue-600 to-blue-700 shadow-2xl z-40 animate-slide-up">
+          <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="text-center sm:text-left">
+                <p className="text-white font-bold text-sm sm:text-base">
+                  🎉 Start Your Free 7-Day Trial Today!
+                </p>
+                <p className="text-blue-100 text-xs sm:text-sm">
+                  No credit card required • Full access to all features
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Link
+                  href="/register"
+                  className="px-6 py-2.5 bg-white text-blue-600 rounded-lg hover:bg-gray-100 font-semibold text-sm sm:text-base shadow-lg transition-all whitespace-nowrap"
+                >
+                  Get Started Free
+                </Link>
+                <button
+                  onClick={() => setShowStickyBar(false)}
+                  className="px-3 py-2.5 text-white hover:bg-blue-800 rounded-lg transition-all"
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating WhatsApp Button */}
       <a

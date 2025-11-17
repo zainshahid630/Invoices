@@ -244,6 +244,8 @@ Create these blog posts (add to `app/blog/` folder):
 3. Create OG image
 4. Submit to Google
 
+
+
 ### **This Month:**
 1. Get 5-10 backlinks
 2. Write 2-3 blog posts

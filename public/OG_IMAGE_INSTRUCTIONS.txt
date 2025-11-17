@@ -1,0 +1,45 @@
+INSTRUCTIONS FOR CREATING OG-IMAGE.JPG
+==========================================
+
+REQUIRED SPECS:
+- Size: 1200 x 630 pixels
+- Format: JPG or PNG
+- File name: og-image.jpg
+- Location: Save in this folder (public/)
+
+QUICK CREATION OPTIONS:
+
+1. CANVA (Easiest - 10 minutes):
+   - Go to canva.com
+   - Search "Open Graph" or create 1200x630px canvas
+   - Add text:
+     * InvoiceFBR
+     * Pakistan's #1 FBR-Compliant Invoicing Software
+     * ✓ Automatic FBR Posting
+     * ✓ Trusted by 130+ Businesses
+     * ✓ Free 7-Day Trial
+   - Download as JPG
+   - Save as "og-image.jpg" in this folder
+
+2. ONLINE TOOL:
+   - Visit: https://og-playground.vercel.app/
+   - Enter your text
+   - Download generated image
+   - Save as "og-image.jpg" in this folder
+
+3. HIRE ON FIVERR:
+   - Search: "open graph image design"
+   - Cost: $5-20
+   - Provide the text above
+
+DESIGN TIPS:
+- Use blue/professional colors
+- Keep text large (readable on mobile)
+- High contrast (dark text on light background)
+- Include your logo if available
+- Keep important content 100px from edges
+
+Once created, the image will be automatically accessible at:
+https://invoicefbr.com/og-image.jpg
+
+Test it at: https://www.opengraph.xyz/

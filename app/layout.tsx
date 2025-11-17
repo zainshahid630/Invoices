@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ToastProvider from "./components/ToastProvider";
+import GoogleAnalytics from "@/lib/google-analytics";
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://invoicefbr.com'),
@@ -102,8 +103,8 @@ export const metadata: Metadata = {
   },
   
   verification: {
-    google: "your-google-verification-code",
-    yandex: "your-yandex-verification-code",
+    google: "PASTE-YOUR-CODE-HERE",
+    // yandex: "your-yandex-verification-code", // Optional: Add later if needed
   },
   
   category: "Business Software",
@@ -183,8 +184,70 @@ export default function RootLayout({
             })
           }}
         />
+        
+        {/* Structured Data - FAQ */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              "mainEntity": [
+                {
+                  "@type": "Question",
+                  "name": "Is FBR integration mandatory?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes, for businesses registered with FBR, digital invoice integration is mandatory. Our system handles this automatically for you."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Can I try before purchasing?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Absolutely! We offer a 7-day free trial with full access to all features. No credit card required."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "How does WhatsApp integration work?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Connect your WhatsApp Business account once, and send invoices directly to your customers with a single click. They receive a professional PDF instantly."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Can I customize invoice templates?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes! Add your logo, customize colors, and choose from multiple professional templates. Enterprise plans include fully custom template design."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Is my data secure?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "We use bank-level encryption to protect your data. All information is stored securely and backed up regularly. We never share your data with third parties."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "What payment methods do you accept?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "We accept all major credit/debit cards, bank transfers, and JazzCash/EasyPaisa for Pakistani customers."
+                  }
+                }
+              ]
+            })
+          }}
+        />
       </head>
       <body>
+        <GoogleAnalytics measurementId="G-Q42N5FT1PC" />
         <ToastProvider>
           {children}
         </ToastProvider>
