@@ -1,9 +1,40 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-
+import { useEffect, useState } from "react";
 export default function ServicesPage() {
+  const [animatedElements, setAnimatedElements] = useState([]);
+
+  function isElementInViewport(elem) {
+    const scroll = window.pageYOffset || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const elemTop = elem.getBoundingClientRect().top + scroll;
+
+    return elemTop - scroll < windowHeight;
+  }
+
+  function animateSections() {
+    const elementsToAnimate = document.querySelectorAll(".scroll-anime");
+    const elementsInViewport = [];
+
+    elementsToAnimate.forEach((elem) => {
+      if (isElementInViewport(elem)) {
+        elem.classList.add("anime");
+        elementsInViewport.push(elem);
+      }
+    });
+
+    setAnimatedElements(elementsInViewport);
+  }
+
+  useEffect(() => {
+    animateSections();
+    window.addEventListener("scroll", animateSections);
+
+    return () => {
+      window.removeEventListener("scroll", animateSections);
+    };
+  }, []);
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
@@ -22,7 +53,7 @@ export default function ServicesPage() {
                 </div>
               </div>
             </Link>
-            
+
             <div className="flex items-center gap-2 sm:gap-4">
               <Link
                 href="/"
@@ -48,15 +79,15 @@ export default function ServicesPage() {
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-300 rounded-full blur-3xl"></div>
         </div>
 
-        <div className="max-w-7xl mx-auto relative text-center">
+        <div className="max-w-7xl mx-auto relative text-center textx">
           <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full mb-6">
-            <span className="text-white font-semibold text-sm">🚀 ZAZTECK SERVICES</span>
+            <span className="text-white font-semibold text-sm ">🚀 ZAZTECK SERVICES</span>
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
             Your Partner in Digital Transformation
           </h1>
           <p className="text-xl sm:text-2xl text-blue-100 max-w-4xl mx-auto leading-relaxed mb-8">
-            From professional websites to custom mobile apps, Zazteck brings your business vision to life 
+            From professional websites to custom mobile apps, Zazteck brings your business vision to life
             with cutting-edge technology and affordable solutions designed for Pakistani businesses.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -85,41 +116,41 @@ export default function ServicesPage() {
       {/* About Zazteck */}
       <section className="py-10 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 textx">
             <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold text-gray-900 mb-6">
               About Zazteck
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Zazteck is a Pakistani technology company dedicated to empowering local businesses 
-              with world-class digital solutions. We understand the unique challenges of running 
+              Zazteck is a Pakistani technology company dedicated to empowering local businesses
+              with world-class digital solutions. We understand the unique challenges of running
               a business in Pakistan and create tools that actually work for you.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 mb-4 sm:mb-10 xl:mb-16">
-            <div className="bg-gradient-to-br from-blue-50 to-white p-4 lg:p-8 rounded-2xl border-2 border-blue-200 hover:border-blue-400 hover:shadow-xl transition-all">
+            <div className="scroll-anime text-yy bg-gradient-to-br from-blue-50 to-white p-4 lg:p-8 rounded-2xl border-2 border-blue-200 hover:border-blue-400 hover:shadow-xl transition-all">
               <div className="text-5xl mb-4">🇵🇰</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">100% Pakistani</h3>
               <p className="text-gray-600 leading-relaxed">
-                Built in Pakistan, for Pakistan. We speak your language, understand your culture, 
+                Built in Pakistan, for Pakistan. We speak your language, understand your culture,
                 and know exactly what Pakistani businesses need to succeed in the digital world.
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-green-50 to-white p-4 lg:p-8 rounded-2xl border-2 border-green-200 hover:border-green-400 hover:shadow-xl transition-all">
+            <div className="scroll-anime textxx bg-gradient-to-br from-green-50 to-white p-4 lg:p-8 rounded-2xl border-2 border-green-200 hover:border-green-400 hover:shadow-xl transition-all">
               <div className="text-5xl mb-4">💡</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Local Expertise</h3>
               <p className="text-gray-600 leading-relaxed">
-                From FBR compliance to local payment gateways, we handle all the complexities 
+                From FBR compliance to local payment gateways, we handle all the complexities
                 of the Pakistani market so you don't have to worry about technical details.
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-50 to-white p-4 lg:p-8 rounded-2xl border-2 border-purple-200 hover:border-purple-400 hover:shadow-xl transition-all">
+            <div className="scroll-anime textyy bg-gradient-to-br from-purple-50 to-white p-4 lg:p-8 rounded-2xl border-2 border-purple-200 hover:border-purple-400 hover:shadow-xl transition-all">
               <div className="text-5xl mb-4">💰</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Affordable Pricing</h3>
               <p className="text-gray-600 leading-relaxed">
-                No expensive international rates. Our pricing is designed for Pakistani businesses 
+                No expensive international rates. Our pricing is designed for Pakistani businesses
                 with flexible payment plans and transparent costs.
               </p>
             </div>
@@ -130,7 +161,7 @@ export default function ServicesPage() {
       {/* Our Services */}
       <section className="py-10 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 scroll-anime textxx">
             <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold text-gray-900 mb-6">
               Our Services
             </h2>
@@ -141,7 +172,7 @@ export default function ServicesPage() {
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* Website Development */}
-            <div className="bg-white rounded-2xl p-4 md:p-4 lg:p-8 shadow-lg hover:shadow-2xl transition-all border border-gray-200">
+            <div className="scroll-anime text-yy bg-white rounded-2xl p-4 md:p-4 lg:p-8 shadow-lg hover:shadow-2xl transition-all border border-gray-200">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-3xl">
                   🌐
@@ -149,7 +180,7 @@ export default function ServicesPage() {
                 <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Website Development</h3>
               </div>
               <p className="text-gray-600 mb-6 text-lg leading-relaxed">
-                Professional, modern websites that represent your brand perfectly. From simple landing 
+                Professional, modern websites that represent your brand perfectly. From simple landing
                 pages to complex e-commerce platforms, we build it all.
               </p>
               <ul className="space-y-3 mb-8">
@@ -186,7 +217,7 @@ export default function ServicesPage() {
             </div>
 
             {/* Mobile App Development */}
-            <div className="bg-white rounded-2xl p-4 md:p-4 lg:p-8 shadow-lg hover:shadow-2xl transition-all border border-gray-200">
+            <div className="scroll-anime textyy bg-white rounded-2xl p-4 md:p-4 lg:p-8 shadow-lg hover:shadow-2xl transition-all border border-gray-200">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center text-3xl">
                   📱
@@ -194,7 +225,7 @@ export default function ServicesPage() {
                 <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Mobile Apps</h3>
               </div>
               <p className="text-gray-600 mb-6 text-lg leading-relaxed">
-                Custom mobile applications for Android and iOS. Reach your customers directly 
+                Custom mobile applications for Android and iOS. Reach your customers directly
                 on their phones with a powerful, user-friendly app.
               </p>
               <ul className="space-y-3 mb-8">
@@ -231,7 +262,7 @@ export default function ServicesPage() {
             </div>
 
             {/* Business Software */}
-            <div className="bg-white rounded-2xl p-4 md:p-4 lg:p-8 shadow-lg hover:shadow-2xl transition-all border border-gray-200">
+            <div className="scroll-anime text-yy bg-white rounded-2xl p-4 md:p-4 lg:p-8 shadow-lg hover:shadow-2xl transition-all border border-gray-200">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center text-3xl">
                   💼
@@ -239,7 +270,7 @@ export default function ServicesPage() {
                 <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Business Software</h3>
               </div>
               <p className="text-gray-600 mb-6 text-lg leading-relaxed">
-                Custom software solutions tailored to your specific business needs. From inventory 
+                Custom software solutions tailored to your specific business needs. From inventory
                 management to CRM systems, we build tools that work for you.
               </p>
               <ul className="space-y-3 mb-8">
@@ -276,7 +307,7 @@ export default function ServicesPage() {
             </div>
 
             {/* Digital Marketing */}
-            <div className="bg-white rounded-2xl p-4 md:p-4 lg:p-8 shadow-lg hover:shadow-2xl transition-all border border-gray-200">
+            <div className="scroll-anime textyy bg-white rounded-2xl p-4 md:p-4 lg:p-8 shadow-lg hover:shadow-2xl transition-all border border-gray-200">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center text-3xl">
                   🎯
@@ -284,7 +315,7 @@ export default function ServicesPage() {
                 <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Digital Marketing</h3>
               </div>
               <p className="text-gray-600 mb-6 text-lg leading-relaxed">
-                Grow your online presence with our comprehensive digital marketing services. 
+                Grow your online presence with our comprehensive digital marketing services.
                 From SEO to social media, we help you reach more customers.
               </p>
               <ul className="space-y-3 mb-8">
@@ -326,7 +357,7 @@ export default function ServicesPage() {
       {/* Why Choose Zazteck */}
       <section className="py-10 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 scroll-anime textxx ">
             <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold text-gray-900 mb-6">
               Why Choose Zazteck?
             </h2>
@@ -336,46 +367,46 @@ export default function ServicesPage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center">
+            <div className="text-center scroll-anime text-yy ">
               <div className="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-4xl">
                 🤝
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Dedicated Support</h3>
               <p className="text-gray-600">
-                From setup to launch and beyond, we're with you every step of the way. 
+                From setup to launch and beyond, we're with you every step of the way.
                 WhatsApp, call, or email - we're always available.
               </p>
             </div>
 
-            <div className="text-center">
+            <div className="text-center scroll-anime textxx ">
               <div className="w-20 h-20 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-4xl">
                 ⚡
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Fast Delivery</h3>
               <p className="text-gray-600">
-                We understand time is money. Our efficient processes ensure quick 
+                We understand time is money. Our efficient processes ensure quick
                 turnaround without compromising on quality.
               </p>
             </div>
 
-            <div className="text-center">
+            <div className="text-center scroll-anime textxx ">
               <div className="w-20 h-20 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-4xl">
                 🎨
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Modern Design</h3>
               <p className="text-gray-600">
-                Beautiful, user-friendly designs that your customers will love. 
+                Beautiful, user-friendly designs that your customers will love.
                 We stay updated with the latest design trends.
               </p>
             </div>
 
-            <div className="text-center">
+            <div className="text-center scroll-anime textyy ">
               <div className="w-20 h-20 bg-yellow-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-4xl">
                 🔒
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Secure & Reliable</h3>
               <p className="text-gray-600">
-                Bank-level security, regular backups, and 99.9% uptime guarantee. 
+                Bank-level security, regular backups, and 99.9% uptime guarantee.
                 Your data and business are safe with us.
               </p>
             </div>
@@ -385,12 +416,12 @@ export default function ServicesPage() {
 
       {/* CTA Section */}
       <section className="py-10 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600">
-        <div className="max-w-4xl mx-auto text-center">
+        <div className="max-w-4xl mx-auto text-center scroll-anime textxx ">
           <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold text-white mb-6">
             Ready to Transform Your Business?
           </h2>
           <p className="text-xl text-white/90 mb-8 leading-relaxed">
-            Let's discuss your project and create something amazing together. 
+            Let's discuss your project and create something amazing together.
             Get a free consultation and custom quote for your business needs.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
@@ -428,7 +459,7 @@ export default function ServicesPage() {
       <footer className="bg-gradient-to-br from-gray-900 to-gray-800 text-white pt-12 pb-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-3 gap-8 mb-8">
-            <div>
+            <div className='scroll-anime text-yy'>
               <h3 className="text-2xl font-bold mb-4">Zazteck</h3>
               <p className="text-gray-400 leading-relaxed mb-4">
                 Empowering Pakistani businesses with world-class digital solutions.
@@ -445,7 +476,7 @@ export default function ServicesPage() {
                 </a>
               </div>
             </div>
-            <div>
+            <div className='scroll-anime textxx'>
               <h4 className="font-bold mb-4 text-lg">Services</h4>
               <ul className="space-y-2 text-gray-400">
                 <li><a href="#" className="hover:text-white transition-colors">Website Development</a></li>
@@ -454,7 +485,7 @@ export default function ServicesPage() {
                 <li><a href="#" className="hover:text-white transition-colors">Digital Marketing</a></li>
               </ul>
             </div>
-            <div>
+            <div className='scroll-anime textyy '>
               <h4 className="font-bold mb-4 text-lg">Products</h4>
               <ul className="space-y-2 text-gray-400">
                 <li><Link href="/" className="hover:text-white transition-colors">InvoiceFBR</Link></li>
@@ -462,7 +493,7 @@ export default function ServicesPage() {
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-700 pt-8 text-center text-gray-400">
+          <div className="border-t border-gray-700 pt-8 text-center text-gray-400 scroll-anime textxx ">
             <p>&copy; 2024 Zazteck. All rights reserved.</p>
           </div>
         </div>

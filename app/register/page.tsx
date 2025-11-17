@@ -70,7 +70,7 @@ export default function RegisterPage() {
       }
 
       setSuccess(true);
-      
+
       // Redirect to login after 2 seconds
       setTimeout(() => {
         router.push('/seller/login?registered=true');
@@ -109,7 +109,7 @@ export default function RegisterPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
+          <Link href="/" className="inline-flex items-center gap-2 mb-6 textx">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-lg">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -119,12 +119,12 @@ export default function RegisterPage() {
               InvoiceFBR
             </span>
           </Link>
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Start Your Free Trial</h1>
-          <p className="text-md sm:text-lg md:text-xl text-gray-600">7 days free • No credit card required</p>
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 textx">Start Your Free Trial</h1>
+          <p className="text-md sm:text-lg md:text-xl text-gray-600 textx">7 days free • No credit card required</p>
         </div>
 
         {/* Registration Form */}
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden textx">
           <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6 text-white">
             <h2 className="text-xl sm:text-2xl font-bold mb-2">Create Your Account</h2>
             <p className="text-blue-100">Get started with FBR-compliant invoicing in minutes</p>

@@ -17,7 +17,38 @@ export default function LandingPage() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+  const [animatedElements, setAnimatedElements] = useState([]);
 
+  function isElementInViewport(elem) {
+    const scroll = window.pageYOffset || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const elemTop = elem.getBoundingClientRect().top + scroll;
+
+    return elemTop - scroll < windowHeight;
+  }
+
+  function animateSections() {
+    const elementsToAnimate = document.querySelectorAll(".scroll-anime");
+    const elementsInViewport = [];
+
+    elementsToAnimate.forEach((elem) => {
+      if (isElementInViewport(elem)) {
+        elem.classList.add("anime");
+        elementsInViewport.push(elem);
+      }
+    });
+
+    setAnimatedElements(elementsInViewport);
+  }
+
+  useEffect(() => {
+    animateSections();
+    window.addEventListener("scroll", animateSections);
+
+    return () => {
+      window.removeEventListener("scroll", animateSections);
+    };
+  }, []);
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
@@ -80,7 +111,7 @@ export default function LandingPage() {
 
         <div className="max-w-7xl mx-auto relative">
           <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
-            <div className="space-y-6 sm:space-y-8 text-center md:text-left">
+            <div className="space-y-6 sm:space-y-8 text-center md:text-left text-y">
               <div className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-100 rounded-full">
                 <span className="text-blue-700 font-semibold text-xs sm:text-sm">🎉 Trusted by 130+ Pakistani Businesses</span>
               </div>
@@ -136,7 +167,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="relative mt-8 md:mt-0">
+            <div className="relative mt-8 md:mt-0 texty">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-purple-600 rounded-3xl transform rotate-3 opacity-10"></div>
               <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-2xl p-1 sm:p-2 border border-gray-200">
                 <img
@@ -165,19 +196,19 @@ export default function LandingPage() {
       <section className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 bg-white border-y border-blue-100">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 items-center justify-items-center opacity-60">
-            <div className="text-center">
+            <div className="text-center scroll-anime textyy">
               <p className="text-2xl sm:text-3xl font-bold text-gray-900">🏛️</p>
               <p className="text-xs sm:text-sm font-semibold text-black mt-1 sm:mt-2">FBR Certified</p>
             </div>
-            <div className="text-center">
+            <div className="text-center scroll-anime textyy">
               <p className="text-2xl sm:text-3xl font-bold text-gray-900">🔒</p>
               <p className="text-xs sm:text-sm font-semibold text-black mt-1 sm:mt-2">Bank-Level Security</p>
             </div>
-            <div className="text-center">
+            <div className="text-center scroll-anime text-yy">
               <p className="text-2xl sm:text-3xl font-bold text-gray-900">⚡</p>
               <p className="text-xs sm:text-sm font-semibold text-black mt-1 sm:mt-2">99.9% Uptime</p>
             </div>
-            <div className="text-center">
+            <div className="text-center scroll-anime text-yy">
               <p className="text-2xl sm:text-3xl font-bold text-gray-900">💬</p>
               <p className="text-xs sm:text-sm font-semibold text-black mt-1 sm:mt-2">24/7 Support</p>
             </div>
@@ -188,7 +219,7 @@ export default function LandingPage() {
       {/* Features Section */}
       <section id="features" className="py-10 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16 md:mb-20">
+          <div className="text-center mb-12 sm:mb-16 md:mb-20 scroll-anime text-xx">
             <div className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-100 rounded-full mb-4 sm:mb-6">
               <span className="text-blue-700 font-semibold text-xs sm:text-sm">✨ FEATURES</span>
             </div>
@@ -202,7 +233,7 @@ export default function LandingPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="group bg-white p-8 rounded-2xl border border-gray-200 hover:border-blue-500 hover:shadow-2xl transition-all duration-300">
+            <div className="scroll-anime text-yy group bg-white p-8 rounded-2xl border border-gray-200 hover:border-blue-500 hover:shadow-2xl transition-all duration-300">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <span className="text-3xl">📄</span>
               </div>
@@ -227,7 +258,7 @@ export default function LandingPage() {
             </div>
 
             {/* Feature 2 */}
-            <div className="group bg-white p-8 rounded-2xl border border-gray-200 hover:border-green-500 hover:shadow-2xl transition-all duration-300">
+            <div className="scroll-anime textxx group bg-white p-8 rounded-2xl border border-gray-200 hover:border-green-500 hover:shadow-2xl transition-all duration-300">
               <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <span className="text-3xl">🏛️</span>
               </div>
@@ -252,7 +283,7 @@ export default function LandingPage() {
             </div>
 
             {/* Feature 3 */}
-            <div className="group bg-white p-8 rounded-2xl border border-gray-200 hover:border-purple-500 hover:shadow-2xl transition-all duration-300">
+            <div className="scroll-anime textyy group bg-white p-8 rounded-2xl border border-gray-200 hover:border-purple-500 hover:shadow-2xl transition-all duration-300">
               <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <span className="text-3xl">💬</span>
               </div>
@@ -277,7 +308,7 @@ export default function LandingPage() {
             </div>
 
             {/* Feature 4 */}
-            <div className="group bg-white p-8 rounded-2xl border border-gray-200 hover:border-yellow-500 hover:shadow-2xl transition-all duration-300">
+            <div className="scroll-anime text-yy group bg-white p-8 rounded-2xl border border-gray-200 hover:border-yellow-500 hover:shadow-2xl transition-all duration-300">
               <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <span className="text-3xl">👥</span>
               </div>
@@ -302,7 +333,7 @@ export default function LandingPage() {
             </div>
 
             {/* Feature 5 */}
-            <div className="group bg-white p-8 rounded-2xl border border-gray-200 hover:border-red-500 hover:shadow-2xl transition-all duration-300">
+            <div className="scroll-anime textxx group bg-white p-8 rounded-2xl border border-gray-200 hover:border-red-500 hover:shadow-2xl transition-all duration-300">
               <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <span className="text-3xl">📊</span>
               </div>
@@ -327,7 +358,7 @@ export default function LandingPage() {
             </div>
 
             {/* Feature 6 */}
-            <div className="group bg-white p-8 rounded-2xl border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300">
+            <div className="scroll-anime textyy group bg-white p-8 rounded-2xl border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300">
               <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <span className="text-3xl">🔒</span>
               </div>
@@ -353,7 +384,7 @@ export default function LandingPage() {
           </div>
 
           {/* CTA after Features */}
-          <div className="text-center mt-16">
+          <div className="text-center mt-16 scroll-anime textxx">
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 sm:p-12 shadow-2xl">
               <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4">
                 Ready to Transform Your Invoicing?
@@ -385,14 +416,14 @@ export default function LandingPage() {
       {/* How It Works Section */}
       <section id="how-it-works" className="py-10 lg:py-14 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 scroll-anime textxx">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 mb-4">How It Works</h2>
             <p className="text-xl text-gray-600">Get started in minutes with our simple process</p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 place-items-center">
             {/* Step 1 */}
-            <div className="text-center max-w-[285px]">
+            <div className="text-center max-w-[285px] scroll-anime text-yy">
               <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6">
                 1
               </div>
@@ -409,7 +440,7 @@ export default function LandingPage() {
             </div>
 
             {/* Step 2 */}
-            <div className="text-center max-w-[285px]">
+            <div className="text-center max-w-[285px] scroll-anime textxx">
               <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6">
                 2
               </div>
@@ -426,7 +457,7 @@ export default function LandingPage() {
             </div>
 
             {/* Step 3 */}
-            <div className="text-center max-w-[285px]">
+            <div className="text-center max-w-[285px] scroll-anime textxx">
               <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6">
                 3
               </div>
@@ -443,7 +474,7 @@ export default function LandingPage() {
             </div>
 
             {/* Step 4 */}
-            <div className="text-center max-w-[285px]">
+            <div className="text-center max-w-[285px] scroll-anime textyy">
               <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6">
                 4
               </div>
@@ -461,7 +492,7 @@ export default function LandingPage() {
           </div>
 
           {/* CTA after How It Works */}
-          <div className="text-center mt-16">
+          <div className="text-center mt-16 scroll-anime textxx">
             <p className="text-xl text-gray-600 mb-6">
               It's that simple! Start creating professional FBR-compliant invoices today
             </p>
@@ -481,18 +512,17 @@ export default function LandingPage() {
 
       {/* Why Choose Us - Pakistani Perspective */}
 
-
       {/* Services Section */}
       <section className="py-10 lg:py-16 xl:py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 scroll-anime textxx">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 mb-4">Our Services</h2>
             <p className="text-xl text-gray-600">Comprehensive invoicing solutions for every business</p>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-8 md:gap-10">
             {/* Service 1 */}
-            <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 bg-white p-4 rounded-xl shadow-lg max-w-[320px] mx-auto md:max-w-none md:mx-0">
+            <div className="scroll-anime text-yy flex flex-col lg:flex-row gap-4 sm:gap-6 bg-white p-4 rounded-xl shadow-lg max-w-[320px] mx-auto md:max-w-none md:mx-0">
               <div className="flex-shrink-0">
                 <img
                   src="https://images.unsplash.com/photo-1554224154-22dec7ec8818?w=400&h=300&fit=crop"
@@ -517,7 +547,7 @@ export default function LandingPage() {
             </div>
 
             {/* Service 2 */}
-            <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 bg-white p-4 rounded-xl shadow-lg max-w-[320px] mx-auto md:max-w-none md:mx-0">
+            <div className="scroll-anime textyy flex flex-col lg:flex-row gap-4 sm:gap-6 bg-white p-4 rounded-xl shadow-lg max-w-[320px] mx-auto md:max-w-none md:mx-0">
               <div className="flex-shrink-0">
                 <img
                   src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=400&h=300&fit=crop"
@@ -542,7 +572,7 @@ export default function LandingPage() {
             </div>
 
             {/* Service 3 */}
-            <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 bg-white p-4 rounded-xl shadow-lg max-w-[320px] mx-auto md:max-w-none md:mx-0">
+            <div className="scroll-anime text-yy flex flex-col lg:flex-row gap-4 sm:gap-6 bg-white p-4 rounded-xl shadow-lg max-w-[320px] mx-auto md:max-w-none md:mx-0">
               <div className="flex-shrink-0">
                 <img
                   src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400&h=300&fit=crop"
@@ -567,7 +597,7 @@ export default function LandingPage() {
             </div>
 
             {/* Service 4 */}
-            <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 bg-white p-4 rounded-xl shadow-lg max-w-[320px] mx-auto md:max-w-none md:mx-0">
+            <div className="scroll-anime textyy flex flex-col lg:flex-row gap-4 sm:gap-6 bg-white p-4 rounded-xl shadow-lg max-w-[320px] mx-auto md:max-w-none md:mx-0">
               <div className="flex-shrink-0">
                 <img
                   src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop"
@@ -593,7 +623,7 @@ export default function LandingPage() {
           </div>
 
           {/* CTA after Services */}
-          <div className="text-center mt-16 bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl border-2 border-blue-200">
+          <div className="scroll-anime textxx text-center mt-16 bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl border-2 border-blue-200">
             <h3 className="text-2xl font-bold text-gray-900 mb-3">
               Everything You Need in One Platform
             </h3>
@@ -603,13 +633,13 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/register"
-                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 font-semibold text-lg shadow-xl transition-all"
+                className="px-4 md:px-8 py-3 w-full sm:w-auto max-w-[320px] sm:max-w-none mx-auto sm:mx-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 font-semibold text-lg shadow-xl transition-all"
               >
                 Try All Features Free for 7 Days
               </Link>
               <a
                 href="#pricing"
-                className="px-8 py-4 border-2 border-blue-600 text-blue-600 rounded-xl hover:bg-blue-50 font-semibold text-lg transition-all"
+                className="px-4 md:px-8 py-3 w-full sm:w-auto max-w-[320px] sm:max-w-none mx-auto sm:mx-0 border-2 border-blue-600 text-blue-600 rounded-xl hover:bg-blue-50 font-semibold text-lg transition-all"
               >
                 View Pricing
               </a>
@@ -621,7 +651,7 @@ export default function LandingPage() {
       {/* Invoice Templates Showcase Section */}
       <section id="templates" className="py-10 lg:py-16 xl:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 scroll-anime textxx">
             <div className="inline-flex items-center px-4 py-2 bg-purple-100 rounded-full mb-6">
               <span className="text-purple-700 font-semibold text-sm">📄 TEMPLATES</span>
             </div>
@@ -635,7 +665,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Modern Template */}
-            <div className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-gray-200 hover:border-blue-500 max-w-[400px] mx-auto sm:max-w-none sm:lg:mx-0">
+            <div className="scroll-anime text-yy group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-gray-200 hover:border-blue-500 max-w-[400px] mx-auto sm:max-w-none sm:lg:mx-0">
               <div className="relative h-96 bg-gradient-to-br from-purple-50 to-white p-4 lg:p-4 xl:p-6 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent"></div>
                 <div className="relative bg-white rounded-lg shadow-xl p-4 transform group-hover:scale-105 transition-transform duration-300">
@@ -712,7 +742,7 @@ export default function LandingPage() {
             </div>
 
             {/* Excel Template */}
-            <div className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-gray-200 hover:border-blue-500 max-w-[400px] mx-auto sm:max-w-none sm:lg:mx-0">
+            <div className="scroll-anime textxx group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-gray-200 hover:border-blue-500 max-w-[400px] mx-auto sm:max-w-none sm:lg:mx-0">
               <div className="relative h-96 bg-gradient-to-br from-purple-50 to-white p-4 lg:p-4 xl:p-6 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-green-600/10 to-transparent"></div>
                 <div className="relative bg-white rounded-lg shadow-xl p-4 transform group-hover:scale-105 transition-transform duration-300">
@@ -805,7 +835,7 @@ export default function LandingPage() {
             </div>
 
             {/* Classic Template */}
-            <div className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-gray-200 hover:border-blue-500 max-w-[400px] mx-auto sm:max-w-none sm:lg:mx-0">
+            <div className="scroll-anime textyy group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-gray-200 hover:border-blue-500 max-w-[400px] mx-auto sm:max-w-none sm:lg:mx-0">
               <div className="relative h-96 bg-gradient-to-br from-purple-50 to-white p-4 lg:p-4 xl:p-6 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-transparent"></div>
                 <div className="relative bg-white rounded-lg shadow-xl p-4 border-2 border-gray-800 transform group-hover:scale-105 transition-transform duration-300">
@@ -882,7 +912,7 @@ export default function LandingPage() {
           </div>
 
           {/* CTA */}
-          <div className="text-center mt-16">
+          <div className="text-center mt-16 scroll-anime textxx">
             <p className="text-lg text-gray-600 mb-6">
               All templates include FBR QR codes, digital signatures, and are fully customizable with your logo and branding.
             </p>
@@ -900,7 +930,7 @@ export default function LandingPage() {
       {/* Pricing Section */}
       <section id="pricing" className="py-10 lg:py-16 xl:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
+          <div className="text-center mb-20 scroll-anime textxx">
             <div className="inline-flex items-center px-4 py-2 bg-blue-100 rounded-full mb-6">
               <span className="text-blue-700 font-semibold text-sm">💰 PRICING</span>
             </div>
@@ -914,7 +944,7 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
             {/* Starter Plan */}
-            <div className="bg-white p-4 sm:p-8 rounded-2xl border-2 border-gray-200 hover:border-blue-300 hover:shadow-2xl transition-all">
+            <div className="scroll-anime text-yy bg-white p-4 sm:p-8 rounded-2xl border-2 border-gray-200 hover:border-blue-300 hover:shadow-2xl transition-all">
               <h3 className="text-2xl font-bold text-gray-900 mb-2">Starter</h3>
               <p className="text-gray-600 mb-6">Perfect for small businesses</p>
               <div className="mb-6">
@@ -963,7 +993,7 @@ export default function LandingPage() {
             </div>
 
             {/* Professional Plan */}
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-4 pt-10 sm:pt-8 sm:p-8 rounded-2xl shadow-2xl transform md:scale-105 relative border-4 border-blue-400">
+            <div className="scroll-anime textyy bg-gradient-to-br from-blue-600 to-blue-700 p-4 pt-10 sm:pt-8 sm:p-8 rounded-2xl shadow-2xl transform md:scale-105 relative border-4 border-blue-400">
               <div className="text-xs lg:text-sm absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 px-2 sm:px-6 py-2 rounded-full font-bold shadow-lg">
                 ⭐ RECOMMENDED
               </div>
@@ -1023,7 +1053,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="text-center mt-12">
+          <div className="text-center mt-12 scroll-anime textxx">
             <div className="inline-flex items-center px-6 py-3 bg-green-100 rounded-full mb-4">
               <span className="text-green-700 font-semibold">⚡ Limited Time: Get 2 Months Free on Annual Plans!</span>
             </div>
@@ -1055,17 +1085,16 @@ export default function LandingPage() {
 
       {/* Testimonials Section */}
 
-
       {/* FAQ Section */}
       <section className="py-10 lg:py-16 xl:py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 scroll-anime textxx">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
             <p className="text-xl text-gray-600">Everything you need to know</p>
           </div>
 
           <div className="space-y-6">
-            <div className="bg-white p-6 rounded-xl shadow-md">
+            <div className="bg-white p-6 rounded-xl shadow-md scroll-anime textyy">
               <h3 className="text-xl font-bold text-gray-900 mb-2">Is FBR integration mandatory?</h3>
               <p className="text-gray-600">
                 Yes, for businesses registered with FBR, digital invoice integration is mandatory.
@@ -1073,7 +1102,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-md">
+            <div className="bg-white p-6 rounded-xl shadow-md scroll-anime text-yy">
               <h3 className="text-xl font-bold text-gray-900 mb-2">Can I try before purchasing?</h3>
               <p className="text-gray-600">
                 Absolutely! We offer a 7-day free trial with full access to all features.
@@ -1081,7 +1110,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-md">
+            <div className="bg-white p-6 rounded-xl shadow-md scroll-anime textyy">
               <h3 className="text-xl font-bold text-gray-900 mb-2">How does WhatsApp integration work?</h3>
               <p className="text-gray-600">
                 Connect your WhatsApp Business account once, and send invoices directly to your
@@ -1089,7 +1118,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-md">
+            <div className="bg-white p-6 rounded-xl shadow-md scroll-anime text-yy">
               <h3 className="text-xl font-bold text-gray-900 mb-2">Can I customize invoice templates?</h3>
               <p className="text-gray-600">
                 Yes! Add your logo, customize colors, and choose from multiple professional templates.
@@ -1097,7 +1126,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-md">
+            <div className="bg-white p-6 rounded-xl shadow-md scroll-anime textyy">
               <h3 className="text-xl font-bold text-gray-900 mb-2">Is my data secure?</h3>
               <p className="text-gray-600">
                 We use bank-level encryption to protect your data. All information is stored securely
@@ -1105,7 +1134,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-md">
+            <div className="bg-white p-6 rounded-xl shadow-md scroll-anime text-yy">
               <h3 className="text-xl font-bold text-gray-900 mb-2">What payment methods do you accept?</h3>
               <p className="text-gray-600">
                 We accept all major credit/debit cards, bank transfers, and JazzCash/EasyPaisa for
@@ -1115,8 +1144,8 @@ export default function LandingPage() {
           </div>
 
           {/* CTA after FAQ with Social Proof */}
-          <div className="text-center mt-16">
-            <div className="bg-white p-8 rounded-2xl shadow-xl border-2 border-blue-100">
+          <div className="text-center mt-16 scroll-anime textxx">
+            <div className="bg-white p-4 sm:p-8 rounded-2xl shadow-xl border-2 border-blue-100">
               <div className="flex justify-center mb-6">
                 <div className="flex -space-x-4">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border-4 border-white"></div>
@@ -1149,7 +1178,7 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className="py-10 lg:py-16 xl:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 to-blue-800">
-        <div className="max-w-4xl mx-auto text-center">
+        <div className="max-w-4xl mx-auto text-center scroll-anime textxx">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-6">
             Ready to Streamline Your Invoicing?
           </h2>
@@ -1178,14 +1207,14 @@ export default function LandingPage() {
       <section id="contact" className="py-10 px-4 sm:px-6 lg:px-8 bg-white relative">
         <div className='bg-gray-100 absolute hidden md:block right-0 top-[190px] w-1/2 z-[0] bottom-0 rounded-tl-[20px]' />
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 scroll-anime textxx">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 mb-4">Get In Touch</h2>
             <p className="text-xl text-gray-600">Have questions? We're here to help</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-12">
             {/* Contact Info */}
-            <div>
+            <div className='scroll-anime text-yy'>
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Contact Information</h3>
               <div className="md:space-y-6 flex items-start flex-wrap flex-row gap-10 md:gap-0 md:flex-col">
                 <div className="flex w-full sm:basis-[calc(50%-2.5rem)] md:w-full items-start">
@@ -1245,7 +1274,7 @@ export default function LandingPage() {
 
             {/* Contact Form */}
             {/* bg-gray-100 */}
-            <div className="py-6 px-4 sm:py-8 sm:px-8 md:px-0 lg:px-8 lg:py-8 bg-gray-100 md:bg-transparent rounded-xl relative z-1">
+            <div className="scroll-anime textyy py-6 px-4 sm:py-8 sm:px-8 md:px-0 lg:px-8 lg:py-8 bg-gray-100 md:bg-transparent rounded-xl relative z-1">
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Send Us a Message</h3>
               <form className="space-y-4">
                 <div>
@@ -1294,7 +1323,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="bg-gradient-to-br from-gray-900 to-gray-800 text-white py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto scroll-anime textxx">
           <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-12 mb-12">
             <div className='col-span-1 sm:col-span-4 md:col-span-1'>
               <div className="flex items-center space-x-3 mb-4">

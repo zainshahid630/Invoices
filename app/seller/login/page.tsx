@@ -44,7 +44,7 @@ export default function SellerLogin() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br px-4 py-10 from-blue-50 to-indigo-100">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md textx">
         <div className="text-center rounded-tl-lg rounded-tr-lg bg-gradient-to-r from-blue-600 to-blue-800 p-6 text-white">
           <h1 className="text-3xl font-bold text-white mb-2"> Login</h1>
           <p className="text-white">Access your company dashboard</p>
