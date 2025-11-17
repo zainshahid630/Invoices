@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvoiceFBR - Video Ad</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Nastaliq+Urdu:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #000;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        
+        .video-container {
+            width: 1200px;
+            height: 630px;
+            position: relative;
+            overflow: hidden;
+            background: #000;
+        }
+        
+        /* Screens */
+        .screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 80px;
+            text-align: center;
+        }
+        
+        .screen.active {
+            opacity: 1;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        .screen.exit {
+            animation: fadeOut 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(1.05); }
+        }
+        
+        /* Screen 1 - Hero */
+        .screen-1 {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #06b6d4 100%);
+        }
+        
+        .screen-1 .logo {
+            font-size: 24px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+        
+        .screen-1 h1 {
+            font-size: 72px;
+            font-weight: 900;
+            color: white;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            animation: slideUp 1s ease-out 0.3s both;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .screen-1 .urdu {
+            font-family: 'Noto Nastaliq Urdu', serif;
+            font-size: 38px;
+            color: rgba(255, 255, 255, 0.9);
+            direction: rtl;
+            margin-bottom: 25px;
+            animation: slideUp 1s ease-out 0.5s both;
+        }
+        
+        .screen-1 .tagline {
+            font-size: 28px;
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 600;
+            animation: slideUp 1s ease-out 0.7s both;
+        }
+        
+        /* Screen 2 - Problem */
+        .screen-2 {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        }
+        
+        .screen-2 .icon {
+            font-size: 80px;
+            margin-bottom: 30px;
+            animation: bounce 1s ease-out;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-30px); }
+        }
+        
+        .screen-2 h2 {
+            font-size: 56px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .screen-2 .problems {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .problem-item {
+            font-size: 24px;
+            color: rgba(255, 255, 255, 0.95);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            animation: slideInLeft 0.6s ease-out both;
+        }
+        
+        .problem-item:nth-child(1) { animation-delay: 0.2s; }
+        .problem-item:nth-child(2) { animation-delay: 0.4s; }
+        .problem-item:nth-child(3) { animation-delay: 0.6s; }
+        
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        /* Screen 3 - Solution */
+        .screen-3 {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+        
+        .screen-3 h2 {
+            font-size: 56px;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 40px;
+            background: linear-gradient(135deg, #3b82f6, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            max-width: 1000px;
+        }
+        
+        .feature-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-radius: 20px;
+            padding: 30px 20px;
+            animation: popIn 0.6s ease-out both;
+        }
+        
+        .feature-box:nth-child(1) { animation-delay: 0.2s; }
+        .feature-box:nth-child(2) { animation-delay: 0.4s; }
+        .feature-box:nth-child(3) { animation-delay: 0.6s; }
+        .feature-box:nth-child(4) { animation-delay: 0.8s; }
+        
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .feature-box .icon {
+            font-size: 42px;
+            margin-bottom: 15px;
+        }
+        
+        .feature-box h3 {
+            font-size: 22px;
+            color: white;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .feature-box p {
+            font-size: 15px;
+            color: #94a3b8;
+        }
+        
+        /* Screen 4 - Stats */
+        .screen-4 {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        }
+        
+        .screen-4 h2 {
+            font-size: 52px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 50px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 60px;
+            max-width: 900px;
+        }
+        
+        .stat-box {
+            animation: countUp 1s ease-out both;
+        }
+        
+        .stat-box:nth-child(1) { animation-delay: 0.2s; }
+        .stat-box:nth-child(2) { animation-delay: 0.4s; }
+        .stat-box:nth-child(3) { animation-delay: 0.6s; }
+        
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .stat-number {
+            font-size: 68px;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            font-size: 22px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+        }
+        
+        /* Screen 5 - CTA */
+        .screen-5 {
+            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+        }
+        
+        .screen-5 .badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 16px 32px;
+            border-radius: 50px;
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 40px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .screen-5 h2 {
+            font-size: 58px;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+        
+        .screen-5 .urdu {
+            font-family: 'Noto Nastaliq Urdu', serif;
+            font-size: 36px;
+            color: rgba(255, 255, 255, 0.95);
+            direction: rtl;
+            margin-bottom: 35px;
+        }
+        
+        .screen-5 .cta-button {
+            background: white;
+            color: #7c3aed;
+            font-size: 28px;
+            font-weight: 800;
+            padding: 22px 50px;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        .screen-5 .website {
+            font-size: 32px;
+            color: white;
+            font-weight: 700;
+            margin-top: 30px;
+            letter-spacing: 1px;
+        }
+        
+        /* Progress bar */
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.3);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        
+        /* Audio control */
+        .audio-control {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 15px 25px;
+            border-radius: 50px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .audio-control:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <div class="video-container">
+        <!-- Screen 1: Hero -->
+        <div class="screen screen-1 active">
+            <div class="logo">INVOICEFBR</div>
+            <h1>Digital Invoicing<br>Made Simple</h1>
+            <div class="urdu">ڈیجیٹل انوائسنگ آسان بنائی گئی</div>
+            <div class="tagline">Send Invoices to FBR Instantly</div>
+        </div>
+        
+        <!-- Screen 2: Problem -->
+        <div class="screen screen-2">
+            <div class="icon">😰</div>
+            <h2>Tired of Manual<br>FBR Submissions?</h2>
+            <div class="problems">
+                <div class="problem-item">❌ Time-consuming paperwork</div>
+                <div class="problem-item">❌ Compliance headaches</div>
+                <div class="problem-item">❌ Manual calculations</div>
+            </div>
+        </div>
+        
+        <!-- Screen 3: Solution -->
+        <div class="screen screen-3">
+            <h2>We've Got You Covered!</h2>
+            <div class="features-grid">
+                <div class="feature-box">
+                    <div class="icon">🏛️</div>
+                    <h3>FBR Direct</h3>
+                    <p>Instant submission</p>
+                </div>
+                <div class="feature-box">
+                    <div class="icon">💬</div>
+                    <h3>WhatsApp</h3>
+                    <p>Send invoices fast</p>
+                </div>
+                <div class="feature-box">
+                    <div class="icon">⚡</div>
+                    <h3>Auto GST</h3>
+                    <p>No manual math</p>
+                </div>
+                <div class="feature-box">
+                    <div class="icon">📊</div>
+                    <h3>Reports</h3>
+                    <p>Track everything</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Screen 4: Stats -->
+        <div class="screen screen-4">
+            <h2>Trusted by Businesses</h2>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-number">500+</div>
+                    <div class="stat-label">Companies</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">10K+</div>
+                    <div class="stat-label">Invoices</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">FBR Compliant</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Screen 5: CTA -->
+        <div class="screen screen-5">
+            <div class="badge">🎁 14-DAY FREE TRIAL</div>
+            <h2>Start Today!<br>No Credit Card</h2>
+            <div class="urdu">آج ہی شروع کریں</div>
+            <button class="cta-button">Get Started →</button>
+            <div class="website">invoicefbr.com</div>
+        </div>
+        
+        <div class="progress-bar"></div>
+        
+        <!-- Background Music -->
+        <audio id="bgMusic" loop>
+            <source src="https://cdn.pixabay.com/audio/2022/03/10/audio_4a8f1d6b27.mp3" type="audio/mpeg">
+        </audio>
+        
+        <div class="audio-control" onclick="toggleMusic()">
+            <span id="musicIcon">🔊</span>
+            <span id="musicText">Play Music</span>
+        </div>
+    </div>
+    
+    <script>
+        let isPlaying = false;
+        const audio = document.getElementById('bgMusic');
+        const musicIcon = document.getElementById('musicIcon');
+        const musicText = document.getElementById('musicText');
+        
+        function toggleMusic() {
+            if (isPlaying) {
+                audio.pause();
+                musicIcon.textContent = '🔇';
+                musicText.textContent = 'Music Off';
+                isPlaying = false;
+            } else {
+                audio.play();
+                musicIcon.textContent = '🔊';
+                musicText.textContent = 'Music On';
+                isPlaying = true;
+            }
+        }
+        
+        // Screen transition logic
+        const screens = document.querySelectorAll('.screen');
+        const progressBar = document.querySelector('.progress-bar');
+        let currentScreen = 0;
+        const screenDuration = 3000; // 3 seconds per screen
+        const totalDuration = screens.length * screenDuration;
+        
+        function showScreen(index) {
+            screens.forEach((screen, i) => {
+                screen.classList.remove('active', 'exit');
+                if (i === index) {
+                    screen.classList.add('active');
+                } else if (i === index - 1) {
+                    screen.classList.add('exit');
+                }
+            });
+        }
+        
+        function nextScreen() {
+            currentScreen = (currentScreen + 1) % screens.length;
+            showScreen(currentScreen);
+        }
+        
+        // Progress bar animation
+        let progress = 0;
+        setInterval(() => {
+            progress += (100 / totalDuration) * 100;
+            if (progress >= 100) {
+                progress = 0;
+            }
+            progressBar.style.width = (progress % (100 / screens.length)) * screens.length + '%';
+        }, 100);
+        
+        // Auto-advance screens
+        setInterval(nextScreen, screenDuration);
+        
+        // Auto-play music after 1 second
+        setTimeout(() => {
+            audio.play().then(() => {
+                isPlaying = true;
+                musicIcon.textContent = '🔊';
+                musicText.textContent = 'Music On';
+            }).catch(() => {
+                console.log('Click to play music');
+            });
+        }, 1000);
+        
+        console.log('%c🎬 15-Second Video Ad Ready!', 'font-size: 20px; font-weight: bold; color: #3b82f6;');
+        console.log('%c📹 Recording Instructions:', 'font-size: 16px; font-weight: bold;');
+        console.log('%c1. Click music button if it doesn\'t auto-play', 'font-size: 14px;');
+        console.log('%c2. Wait for the video to loop once (15 seconds)', 'font-size: 14px;');
+        console.log('%c3. Start screen recording', 'font-size: 14px;');
+        console.log('%c4. Record one complete loop (15 seconds)', 'font-size: 14px;');
+        console.log('%c5. Video transitions automatically!', 'font-size: 14px; color: #10b981;');
+        console.log('%c\n🎯 5 Screens:', 'font-size: 14px; font-weight: bold;');
+        console.log('%c   1. Hero (3s)', 'font-size: 13px;');
+        console.log('%c   2. Problem (3s)', 'font-size: 13px;');
+        console.log('%c   3. Solution (3s)', 'font-size: 13px;');
+        console.log('%c   4. Stats (3s)', 'font-size: 13px;');
+        console.log('%c   5. CTA (3s)', 'font-size: 13px;');
+    </script>
+</body>
+</html>

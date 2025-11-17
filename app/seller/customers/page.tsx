@@ -7,7 +7,6 @@ import SellerLayout from '../components/SellerLayout';
 import { useToast } from '../../components/ToastProvider';
 import { useConfirm } from '../../hooks/useConfirm';
 import Pagination from '../../components/Pagination';
-import { usePagination } from '../../hooks/usePagination';
 
 interface Customer {
   id: string;
@@ -24,6 +23,19 @@ interface Customer {
   updated_at: string;
 }
 
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+interface Stats {
+  total: number;
+  active: number;
+  inactive: number;
+}
+
 export default function CustomersPage() {
   const router = useRouter();
   const toast = useToast();
@@ -32,6 +44,19 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterActive, setFilterActive] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
+  const [stats, setStats] = useState<Stats>({
+    total: 0,
+    active: 0,
+    inactive: 0,
+  });
 
   useEffect(() => {
     const session = localStorage.getItem('seller_session');
@@ -42,14 +67,25 @@ export default function CustomersPage() {
 
     const userData = JSON.parse(session);
     loadCustomers(userData.company_id);
-  }, [router]);
+  }, [router, currentPage, itemsPerPage, searchTerm, filterActive]);
 
   const loadCustomers = async (companyId: string) => {
+    setLoading(true);
     try {
-      const response = await fetch(`/api/seller/customers?company_id=${companyId}`);
+      const params = new URLSearchParams({
+        company_id: companyId,
+        page: currentPage.toString(),
+        limit: itemsPerPage.toString(),
+        search: searchTerm,
+        status: filterActive,
+      });
+
+      const response = await fetch(`/api/seller/customers?${params}`);
       if (response.ok) {
         const data = await response.json();
-        setCustomers(data);
+        setCustomers(data.customers);
+        setPagination(data.pagination);
+        setStats(data.stats);
       } else {
         console.error('Failed to load customers');
       }
@@ -59,6 +95,15 @@ export default function CustomersPage() {
       setLoading(false);
     }
   };
+
+  // Debounced search - production level
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCurrentPage(1); // Reset to first page on search
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const handleDelete = async (customerId: string) => {
     const confirmed = await confirm({
@@ -123,40 +168,10 @@ export default function CustomersPage() {
     }
   };
 
-  // Filter customers
-  const filteredCustomers = customers.filter((customer) => {
-    const matchesSearch =
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.business_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.ntn_cnic?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.gst_number?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesFilter =
-      filterActive === 'all' ||
-      (filterActive === 'active' && customer.is_active) ||
-      (filterActive === 'inactive' && !customer.is_active);
-
-    return matchesSearch && matchesFilter;
-  });
-
-  const stats = {
-    total: customers.length,
-    active: customers.filter((c) => c.is_active).length,
-    inactive: customers.filter((c) => !c.is_active).length,
+  const handleFilterChange = (filter: string) => {
+    setFilterActive(filter);
+    setCurrentPage(1); // Reset to first page on filter change
   };
-
-  // Pagination - must be called before any conditional returns
-  const {
-    currentPage,
-    totalPages,
-    itemsPerPage,
-    paginatedItems,
-    setCurrentPage,
-    setItemsPerPage,
-  } = usePagination({
-    items: filteredCustomers,
-    initialItemsPerPage: 10,
-  });
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -209,7 +224,7 @@ export default function CustomersPage() {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setFilterActive('all')}
+                onClick={() => handleFilterChange('all')}
                 className={`px-4 py-2 rounded-lg ${
                   filterActive === 'all'
                     ? 'bg-blue-600 text-white'
@@ -219,7 +234,7 @@ export default function CustomersPage() {
                 All
               </button>
               <button
-                onClick={() => setFilterActive('active')}
+                onClick={() => handleFilterChange('active')}
                 className={`px-4 py-2 rounded-lg ${
                   filterActive === 'active'
                     ? 'bg-green-600 text-white'
@@ -229,7 +244,7 @@ export default function CustomersPage() {
                 Active
               </button>
               <button
-                onClick={() => setFilterActive('inactive')}
+                onClick={() => handleFilterChange('inactive')}
                 className={`px-4 py-2 rounded-lg ${
                   filterActive === 'inactive'
                     ? 'bg-red-600 text-white'
@@ -271,7 +286,7 @@ export default function CustomersPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredCustomers.length === 0 ? (
+              {customers.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                     {searchTerm || filterActive !== 'all'
@@ -280,7 +295,7 @@ export default function CustomersPage() {
                   </td>
                 </tr>
               ) : (
-                paginatedItems.map((customer) => (
+                customers.map((customer) => (
                   <tr key={customer.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="font-medium text-gray-900">{customer.name}</div>
@@ -337,14 +352,17 @@ export default function CustomersPage() {
         </div>
 
         {/* Pagination */}
-        {filteredCustomers.length > 0 && (
+        {pagination.total > 0 && (
           <Pagination
             currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredCustomers.length}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.total}
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
+            onItemsPerPageChange={(newLimit) => {
+              setItemsPerPage(newLimit);
+              setCurrentPage(1);
+            }}
           />
         )}
       </div>
