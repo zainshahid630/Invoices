@@ -7,7 +7,7 @@ export default function ServicesPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/98 backdrop-blur-md shadow-sm z-50 border-b border-gray-100">
+      <nav className="fixed top-0 w-full bg-white/50 backdrop-blur-md shadow-sm z-50 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 md:h-20 gap-2">
             <Link href="/" className="flex items-center flex-shrink-0">
@@ -28,7 +28,7 @@ export default function ServicesPage() {
                 href="/"
                 className="px-4 sm:px-6 py-2 sm:py-2.5 text-sm sm:text-base text-gray-700 hover:text-blue-600 font-semibold transition-colors whitespace-nowrap"
               >
-                Back to Home
+                Home
               </Link>
               <Link
                 href="/register"
@@ -425,7 +425,7 @@ export default function ServicesPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-br from-gray-900 to-gray-800 text-white py-12 px-4 sm:px-6 lg:px-8">
+      <footer className="bg-gradient-to-br from-gray-900 to-gray-800 text-white pt-12 pb-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>
@@ -463,7 +463,7 @@ export default function ServicesPage() {
             </div>
           </div>
           <div className="border-t border-gray-700 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Zazteck. All rights reserved. Made with ❤️ in Pakistan 🇵🇰</p>
+            <p>&copy; 2024 Zazteck. All rights reserved.</p>
           </div>
         </div>
       </footer>
