@@ -32,38 +32,82 @@ async function generateInvoiceNumber(companyId: string): Promise<string> {
   return invoiceNumber;
 }
 
-// GET - List all invoices for a company
+// GET - List all invoices for a company with server-side pagination
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const company_id = searchParams.get('company_id');
-    const status = searchParams.get('status');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || 'all';
 
     if (!company_id) {
       return NextResponse.json({ error: 'Company ID is required' }, { status: 400 });
     }
 
+    // Calculate offset
+    const offset = (page - 1) * limit;
+
+    // Build query
     let query = supabase
       .from('invoices')
       .select(`
         *,
         customer:customers(id, name, business_name)
-      `)
+      `, { count: 'exact' })
       .eq('company_id', company_id)
       .is('deleted_at', null); // Exclude deleted invoices
 
+    // Apply search filter
+    if (search) {
+      query = query.or(`invoice_number.ilike.%${search}%,buyer_name.ilike.%${search}%`);
+    }
+
+    // Apply status filter
     if (status && status !== 'all') {
       query = query.eq('status', status);
     }
 
-    const { data: invoices, error } = await query.order('created_at', { ascending: false });
+    // Apply pagination and ordering
+    query = query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    const { data: invoices, error, count } = await query;
 
     if (error) {
       console.error('Error fetching invoices:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(invoices || []);
+    // Get stats for all invoices (not just current page)
+    const { data: allInvoices } = await supabase
+      .from('invoices')
+      .select('status, payment_status, total_amount')
+      .eq('company_id', company_id)
+      .is('deleted_at', null);
+
+    const stats = {
+      total: allInvoices?.length || 0,
+      draft: allInvoices?.filter(i => i.status === 'draft').length || 0,
+      posted: allInvoices?.filter(i => i.status === 'fbr_posted').length || 0,
+      verified: allInvoices?.filter(i => i.status === 'verified').length || 0,
+      totalAmount: allInvoices?.reduce((sum, i) => sum + parseFloat(i.total_amount.toString()), 0) || 0,
+      pendingAmount: allInvoices?.filter(i => i.payment_status === 'pending' || i.payment_status === 'partial')
+        .reduce((sum, i) => sum + parseFloat(i.total_amount.toString()), 0) || 0,
+    };
+
+    return NextResponse.json({
+      invoices: invoices || [],
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
+      },
+      stats,
+    });
   } catch (error: any) {
     console.error('Error in GET /api/seller/invoices:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

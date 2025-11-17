@@ -6,6 +6,36 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Helper function to normalize NTN number
+function normalizeNTN(ntn: string): { normalized: string; isValid: boolean; error?: string } {
+  if (!ntn) {
+    return { normalized: '', isValid: false, error: 'NTN is empty' };
+  }
+  
+  // Remove all hyphens
+  const cleaned = ntn.replace(/-/g, '');
+  
+  // Check if it has at least 7 digits
+  if (cleaned.length < 7) {
+    return { 
+      normalized: cleaned, 
+      isValid: false, 
+      error: `NTN must have at least 7 digits. Found: ${cleaned.length} digits` 
+    };
+  }
+  
+  return { normalized: cleaned, isValid: true };
+}
+
+// Helper function to sanitize description for JSON
+function sanitizeDescription(description: string): string {
+  if (!description) return '';
+  
+  // Replace double quotes with single quotes to prevent JSON issues
+  // This is especially important for measurements like 10" (inches)
+  return description.replace(/"/g, "'");
+}
+
 // POST - Validate invoice with FBR
 export async function POST(
   request: NextRequest,
@@ -63,18 +93,29 @@ export async function POST(
     }
 
     // Build FBR validation payload
-    // Remove dashes from NTN numbers for FBR submission
-    const cleanSellerNTN = (company.ntn_number || '').replace(/-/g, '');
-    const cleanBuyerNTN = (invoice.buyer_ntn_cnic || '').replace(/-/g, '');
+    // Normalize and validate NTN numbers
+    const sellerNTN = normalizeNTN(company.ntn_number || '');
+    if (!sellerNTN.isValid) {
+      return NextResponse.json({ 
+        error: `Invalid Seller NTN: ${sellerNTN.error}. Please update in Settings.` 
+      }, { status: 400 });
+    }
+    
+    const buyerNTN = normalizeNTN(invoice.buyer_ntn_cnic || '');
+    if (!buyerNTN.isValid) {
+      return NextResponse.json({ 
+        error: `Invalid Buyer NTN: ${buyerNTN.error}. Please update the invoice.` 
+      }, { status: 400 });
+    }
     
     const fbrPayload = {
       invoiceType: invoice.invoice_type || 'Sale Invoice',
       invoiceDate: invoice.invoice_date,
-      sellerNTNCNIC: cleanSellerNTN,
+      sellerNTNCNIC: sellerNTN.normalized,
       sellerBusinessName: company.business_name || company.name || '',
       sellerProvince: company.province || 'Sindh', // Default to Sindh if not set
       sellerAddress: company.address || '',
-      buyerNTNCNIC: cleanBuyerNTN,
+      buyerNTNCNIC: buyerNTN.normalized,
       buyerBusinessName: invoice.buyer_business_name || invoice.buyer_name || '',
       buyerProvince: invoice.buyer_province || 'Sindh',
       buyerAddress: invoice.buyer_address || '',
@@ -83,7 +124,7 @@ export async function POST(
       scenarioId: invoice.scenario || 'SN000',
       items: items.map((item: any) => ({
         hsCode: item.hs_code || '0000.0000',
-        productDescription: item.item_name || '',
+        productDescription: sanitizeDescription(item.item_name || ''),
         rate: `${invoice.sales_tax_rate || 0}%`,
         uoM: item.uom || 'Numbers, pieces, units',
         quantity: parseFloat(item.quantity.toString()) || 0,

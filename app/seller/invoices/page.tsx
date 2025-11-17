@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import SellerLayout from '../components/SellerLayout';
 import Pagination from '../../components/Pagination';
-import { usePagination } from '../../hooks/usePagination';
 
 interface Invoice {
   id: string;
@@ -23,6 +22,22 @@ interface Invoice {
   buyer_name: string;
 }
 
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+interface Stats {
+  total: number;
+  draft: number;
+  posted: number;
+  verified: number;
+  totalAmount: number;
+  pendingAmount: number;
+}
+
 export default function InvoicesPage() {
   const router = useRouter();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -30,6 +45,22 @@ export default function InvoicesPage() {
   const [companyId, setCompanyId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
+  const [stats, setStats] = useState<Stats>({
+    total: 0,
+    draft: 0,
+    posted: 0,
+    verified: 0,
+    totalAmount: 0,
+    pendingAmount: 0,
+  });
 
   useEffect(() => {
     const session = localStorage.getItem('seller_session');
@@ -41,15 +72,36 @@ export default function InvoicesPage() {
     const userData = JSON.parse(session);
     setCompanyId(userData.company_id);
     loadInvoices(userData.company_id);
-  }, [router]);
+  }, [router, currentPage, itemsPerPage, searchTerm, statusFilter]);
+
+  // Debounced search - production level
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCurrentPage(1); // Reset to first page on search
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const loadInvoices = async (companyId: string) => {
+    if (!companyId) return;
+    
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await fetch(`/api/seller/invoices?company_id=${companyId}`);
+      const params = new URLSearchParams({
+        company_id: companyId,
+        page: currentPage.toString(),
+        limit: itemsPerPage.toString(),
+        search: searchTerm,
+        status: statusFilter,
+      });
+
+      const response = await fetch(`/api/seller/invoices?${params}`);
       if (response.ok) {
         const data = await response.json();
-        setInvoices(data);
+        setInvoices(data.invoices);
+        setPagination(data.pagination);
+        setStats(data.stats);
       }
     } catch (error) {
       console.error('Error loading invoices:', error);
@@ -78,40 +130,10 @@ export default function InvoicesPage() {
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
-  const filteredInvoices = invoices.filter((invoice) => {
-    const matchesSearch =
-      invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.buyer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.customer?.name?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const stats = {
-    total: invoices.length,
-    draft: invoices.filter((i) => i.status === 'draft').length,
-    posted: invoices.filter((i) => i.status === 'fbr_posted').length,
-    verified: invoices.filter((i) => i.status === 'verified').length,
-    totalAmount: invoices.reduce((sum, i) => sum + parseFloat(i.total_amount.toString()), 0),
-    pendingAmount: invoices
-      .filter((i) => i.payment_status === 'pending' || i.payment_status === 'partial')
-      .reduce((sum, i) => sum + parseFloat(i.total_amount.toString()), 0),
+  const handleStatusFilterChange = (newStatus: string) => {
+    setStatusFilter(newStatus);
+    setCurrentPage(1); // Reset to first page on filter change
   };
-
-  // Pagination
-  const {
-    currentPage,
-    totalPages,
-    itemsPerPage,
-    paginatedItems,
-    setCurrentPage,
-    setItemsPerPage,
-  } = usePagination({
-    items: filteredInvoices,
-    initialItemsPerPage: 10,
-  });
 
   if (loading) {
     return (
@@ -189,7 +211,7 @@ export default function InvoicesPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => handleStatusFilterChange(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">All Status</option>
@@ -234,7 +256,7 @@ export default function InvoicesPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredInvoices.length === 0 ? (
+              {invoices.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
                     {searchTerm || statusFilter !== 'all'
@@ -243,7 +265,7 @@ export default function InvoicesPage() {
                   </td>
                 </tr>
               ) : (
-                paginatedItems.map((invoice) => (
+                invoices.map((invoice) => (
                   <tr key={invoice.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Link
@@ -309,14 +331,17 @@ export default function InvoicesPage() {
         </div>
 
         {/* Pagination */}
-        {filteredInvoices.length > 0 && (
+        {pagination.total > 0 && (
           <Pagination
             currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredInvoices.length}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.total}
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
+            onItemsPerPageChange={(newLimit) => {
+              setItemsPerPage(newLimit);
+              setCurrentPage(1);
+            }}
           />
         )}
       </div>
