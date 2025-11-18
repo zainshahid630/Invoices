@@ -50,3 +50,10 @@ logs
 # Temporary files
 *.tmp
 *.temp
+
+# Archive files
+*.zip
+*.rar
+*.tar
+*.gz
+*.7z
