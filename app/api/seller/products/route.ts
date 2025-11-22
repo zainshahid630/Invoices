@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase-server';
 import { checkSubscription } from '@/lib/subscription-check';
+
+const supabase = getSupabaseServer();
 
 // GET - List all products for a company
 export async function GET(request: NextRequest) {

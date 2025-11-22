@@ -1,40 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-// Helper function to normalize NTN number
-function normalizeNTN(ntn: string): { normalized: string; isValid: boolean; error?: string } {
-  if (!ntn) {
-    return { normalized: '', isValid: false, error: 'NTN is empty' };
-  }
-  
-  // Remove all hyphens
-  const cleaned = ntn.replace(/-/g, '');
-  
-  // Check if it has at least 7 digits
-  if (cleaned.length < 7) {
-    return { 
-      normalized: cleaned, 
-      isValid: false, 
-      error: `NTN must have at least 7 digits. Found: ${cleaned.length} digits` 
-    };
-  }
-  
-  return { normalized: cleaned, isValid: true };
-}
+import { getSupabaseServer } from '@/lib/supabase-server';
+import { normalizeNTN } from '@/lib/ntn-utils';
 
 // Helper function to sanitize description for JSON
-function sanitizeDescription(description: string): string {
-  if (!description) return '';
-  
-  // Replace double quotes with single quotes to prevent JSON issues
-  // This is especially important for measurements like 10" (inches)
-  return description.replace(/"/g, "'");
+function sanitizeDescription(input: string): string {
+  if (!input) return "";
+
+  return input
+    .replace(/\\/g, "")          // remove backslashes
+    .replace(/"/g, "″")          // replace inch " with unicode inch sign
+    .replace(/\s+/g, " ")        // normalize spacing
+    .trim();
 }
+
+
+
+
 
 // POST - Validate invoice with FBR
 export async function POST(
@@ -50,6 +31,7 @@ export async function POST(
     }
 
     // Get company details (including FBR token)
+    const supabase = getSupabaseServer();
     const { data: company, error: companyError } = await supabase
       .from('companies')
       .select('*')
@@ -64,7 +46,7 @@ export async function POST(
       return NextResponse.json({ error: 'FBR token not configured. Please add FBR token in Settings.' }, { status: 400 });
     }
 
-    console.log('company.fbr_token',company.fbr_token )
+    console.log('company.fbr_token', company.fbr_token)
 
     // Get invoice with items
     const { data: invoice, error: invoiceError } = await supabase
@@ -96,18 +78,18 @@ export async function POST(
     // Normalize and validate NTN numbers
     const sellerNTN = normalizeNTN(company.ntn_number || '');
     if (!sellerNTN.isValid) {
-      return NextResponse.json({ 
-        error: `Invalid Seller NTN: ${sellerNTN.error}. Please update in Settings.` 
+      return NextResponse.json({
+        error: `Invalid Seller NTN: ${sellerNTN.error}. Please update in Settings.`
       }, { status: 400 });
     }
-    
+
     const buyerNTN = normalizeNTN(invoice.buyer_ntn_cnic || '');
     if (!buyerNTN.isValid) {
-      return NextResponse.json({ 
-        error: `Invalid Buyer NTN: ${buyerNTN.error}. Please update the invoice.` 
+      return NextResponse.json({
+        error: `Invalid Buyer NTN: ${buyerNTN.error}. Please update the invoice.`
       }, { status: 400 });
     }
-    
+
     const fbrPayload = {
       invoiceType: invoice.invoice_type || 'Sale Invoice',
       invoiceDate: invoice.invoice_date,
@@ -117,7 +99,7 @@ export async function POST(
       sellerAddress: company.address || '',
       buyerNTNCNIC: buyerNTN.normalized,
       buyerBusinessName: invoice.buyer_business_name || invoice.buyer_name || '',
-      buyerProvince: invoice.buyer_province || 'Sindh',
+      buyerProvince: invoice.buyer_province || '',
       buyerAddress: invoice.buyer_address || '',
       buyerRegistrationType: invoice.buyer_registration_type || 'Unregistered',
       invoiceRefNo: invoice.invoice_number || '',
@@ -153,7 +135,25 @@ export async function POST(
       body: JSON.stringify(fbrPayload)
     });
 
-    const fbrData = await fbrResponse.json();
+    // Try to parse JSON, handle malformed responses
+    let fbrData;
+    const responseText = await fbrResponse.text();
+
+    try {
+      fbrData = JSON.parse(responseText);
+    } catch (jsonError) {
+      console.error('FBR returned malformed JSON:', responseText);
+      return NextResponse.json({
+        success: false,
+        error: 'FBR API returned invalid response format',
+        details: {
+          message: 'The FBR server returned malformed data. This is a temporary issue with FBR servers.',
+          rawResponse: responseText.substring(0, 500), // First 500 chars for debugging
+          suggestion: 'Please try again in a few moments.'
+        },
+        payload: fbrPayload
+      }, { status: 502 }); // Bad Gateway
+    }
 
     if (!fbrResponse.ok) {
       return NextResponse.json({
@@ -164,10 +164,41 @@ export async function POST(
       }, { status: fbrResponse.status });
     }
 
+    // Check validation response for errors
+    // FBR can return 200 OK but still have validation errors in the response
+    let isValid = true;
+    let validationErrors: string[] = [];
+
+    if (fbrData.validationResponse) {
+      const vr = fbrData.validationResponse;
+
+      // Check overall status
+      if (vr.status === 'Invalid') {
+        isValid = false;
+        if (vr.error) {
+          validationErrors.push(vr.error);
+        }
+      }
+
+      // Check individual item statuses
+      if (vr.invoiceStatuses && Array.isArray(vr.invoiceStatuses)) {
+        vr.invoiceStatuses.forEach((item: any) => {
+          if (item.status === 'Invalid') {
+            isValid = false;
+            const errorMsg = `Item ${item.itemSNo}: ${item.error || item.errorCode || 'Invalid'}`;
+            validationErrors.push(errorMsg);
+          }
+        });
+      }
+    }
+
     // Return success response
     return NextResponse.json({
-      success: true,
-      message: 'Invoice validated successfully with FBR',
+      success: isValid,
+      message: isValid
+        ? 'Invoice validated successfully with FBR'
+        : 'FBR validation failed - please fix the errors',
+      errors: validationErrors.length > 0 ? validationErrors : undefined,
       fbrResponse: fbrData,
       payload: fbrPayload
     });

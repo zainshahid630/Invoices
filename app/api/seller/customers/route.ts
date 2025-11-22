@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServer } from '@/lib/supabase-server';
 import { checkSubscription } from '@/lib/subscription-check';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = getSupabaseServer();
 
 // GET - List all customers for a company with server-side pagination
 export async function GET(request: NextRequest) {
@@ -93,6 +90,7 @@ export async function POST(request: NextRequest) {
       address,
       ntn_cnic,
       gst_number,
+      phone,
       province,
       registration_type,
     } = body;
@@ -168,6 +166,7 @@ export async function POST(request: NextRequest) {
         address,
         ntn_cnic,
         gst_number,
+        phone,
         province,
         registration_type: registration_type || 'Unregistered',
         is_active: true,

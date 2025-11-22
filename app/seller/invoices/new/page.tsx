@@ -5,24 +5,62 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import SellerLayout from '../../components/SellerLayout';
 import { useToast } from '../../../components/ToastProvider';
+import { normalizeNTN } from '@/lib/ntn-utils';
+import { FBR_PROVINCES, FBR_DOC_TYPES, FBR_TRANS_TYPES, FBR_UOMS } from '@/lib/fbr-reference-data';
 
-const INVOICE_TYPES = [
-  { value: 'Sale Invoice', label: 'Sale Invoice' },
-  { value: 'Debit Note', label: 'Debit Note' },
-  { value: 'Credit Note', label: 'Credit Note' }
-];
+
+// Interfaces for FBR Data
+interface FBRProvince {
+  stateProvinceCode: number;
+  stateProvinceDesc: string;
+}
+
+interface FBRDocType {
+  docTypeId: number;
+  docDescription: string;
+}
+
+interface FBRTransType {
+  transactioN_TYPE_ID: number;
+  transactioN_DESC: string;
+}
+
+interface FBRUOM {
+  uoM_ID: number;
+  description: string;
+}
+
+
 
 const SCENARIOS = [
-  { value: 'SN002', label: 'SN002 – Goods at Standard Rate to Unregistered Buyers' },
   { value: 'SN001', label: 'SN001 – Goods at Standard Rate to Registered Buyers' },
+  { value: 'SN002', label: 'SN002 – Goods at Standard Rate to Unregistered Buyers' },
+  { value: 'SN003', label: 'SN003 – Steel Melting and Re-rolling' },
+  { value: 'SN004', label: 'SN004 – Ship Breaking (Uses Reference Seller NTN)' },
   { value: 'SN005', label: 'SN005 – Reduced Rate Sale' },
   { value: 'SN006', label: 'SN006 – Exempt Goods Sale' },
   { value: 'SN007', label: 'SN007 – Zero Rated Sale' },
+  { value: 'SN008', label: 'SN008 – Sale Invoice Scenario' },
+  { value: 'SN009', label: 'SN009 – Cotton Ginners' },
+  { value: 'SN010', label: 'SN010 – Telecommunication Services' },
+  { value: 'SN011', label: 'SN011 – Toll Manufacturing' },
+  { value: 'SN012', label: 'SN012 – Petroleum Products' },
+  { value: 'SN013', label: 'SN013 – Electricity Supply to Retailers' },
+  { value: 'SN014', label: 'SN014 – Gas to CNG Stations' },
+  { value: 'SN015', label: 'SN015 – Mobile Phones (Ninth Schedule)' },
   { value: 'SN016', label: 'SN016 – Processing / Conversion of Goods' },
   { value: 'SN017', label: 'SN017 – Sale of Goods where FED is Charged in ST Mode' },
   { value: 'SN018', label: 'SN018 – Sale of Services where FED is Charged in ST Mode' },
   { value: 'SN019', label: 'SN019 – Sale of Services' },
+  { value: 'SN020', label: 'SN020 – Electric Vehicle (1%)' },
+  { value: 'SN021', label: 'SN021 – Scenario SN021' },
+  { value: 'SN022', label: 'SN022 – Scenario SN022' },
+  { value: 'SN023', label: 'SN023 – Scenario SN023' },
   { value: 'SN024', label: 'SN024 – Goods Sold that are Listed in SRO 297(1)/2023' },
+  { value: 'SN025', label: 'SN025 – Scenario SN025' },
+  { value: 'SN026', label: 'SN026 – Goods at Standard Rate to Registered Buyers' },
+  { value: 'SN027', label: 'SN027 – 3rd Schedule Goods to Registered Buyers' },
+  { value: 'SN028', label: 'SN028 – Goods at Reduced Rate' },
 ];
 const PROVINCES = [
   'Punjab',
@@ -62,25 +100,37 @@ interface InvoiceItem {
   uom: string;
   unit_price: string;
   quantity: string;
+  sale_type: string; // NEW: Sale Type for FBR
   searchTerm?: string;
   showDropdown?: boolean;
 }
+
+import { FormSkeleton } from '@/app/components/LoadingStates';
 
 export default function NewInvoicePage() {
   const router = useRouter();
   const toast = useToast();
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true); // NEW: Track initial data load
   const [error, setError] = useState('');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [companyId, setCompanyId] = useState('');
+  // FBR Reference Data State
+  const [provinces, setProvinces] = useState<FBRProvince[]>([]);
+  const [invoiceTypes, setInvoiceTypes] = useState<FBRDocType[]>([]);
+  const [transactionTypes, setTransactionTypes] = useState<FBRTransType[]>([]);
+  const [uoms, setUoms] = useState<FBRUOM[]>([]);
+
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdInvoiceId, setCreatedInvoiceId] = useState('');
 
   const [formData, setFormData] = useState({
     invoice_number: '', // Will be auto-generated but editable
     po_number: '',
     invoice_date: new Date().toISOString().split('T')[0],
     invoice_type: 'Sale Invoice',
-    scenario: 'SN002',
+    scenario: 'SN001',
     sales_tax_rate: '18',
     further_tax_rate: '',
     payment_status: 'pending', // Default to pending (unpaid)
@@ -100,8 +150,12 @@ export default function NewInvoicePage() {
     buyer_registration_type: 'Unregistered',
   });
 
+  // Buyer Validation State
+  const [isValidatingBuyer, setIsValidatingBuyer] = useState(false);
+  const [buyerStatus, setBuyerStatus] = useState<'Active' | 'In-Active' | null>(null);
+
   const [defaultHsCode, setDefaultHsCode] = useState('');
-  
+
   const [items, setItems] = useState<InvoiceItem[]>([
     {
       product_id: null,
@@ -110,6 +164,7 @@ export default function NewInvoicePage() {
       uom: 'Numbers, pieces, units',
       unit_price: '',
       quantity: '',
+      sale_type: 'Goods at standard rate (default)', // Default
       searchTerm: '',
       showDropdown: false,
     },
@@ -124,48 +179,71 @@ export default function NewInvoicePage() {
 
     const userData = JSON.parse(session);
     setCompanyId(userData.company_id);
-    loadCustomers(userData.company_id);
-    loadProducts(userData.company_id);
-    generateAutoInvoiceNumber(userData.company_id);
-  }, [router]);
+    loadInitialData(userData.company_id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
-  const generateAutoInvoiceNumber = async (companyId: string) => {
+  // OPTIMIZED: Load initial data without FBR API calls
+  const loadInitialData = async (companyId: string) => {
     try {
-      // Get settings to generate invoice number
-      const response = await fetch(`/api/seller/settings?company_id=${companyId}`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Settings data:', data);
-        
-        const prefix = data.settings?.invoice_prefix || 'INV';
-        const counter = data.settings?.invoice_counter || 1;
+      setInitialLoading(true);
 
-        console.log('Prefix:', prefix, 'Counter:', counter);
+      // 1. Load Local Data
+      const localRes = await fetch(`/api/seller/invoices/init-data?company_id=${companyId}`);
 
-        // Generate invoice number: PREFIX + COUNTER (e.g., INV301, INV.301, etc.)
-        // No separator added - user controls format via prefix
-        const autoInvoiceNumber = `${prefix}${counter}`;
+      // 2. Use Local FBR Reference Data (instant load)
+      setProvinces(FBR_PROVINCES as any);
+      setInvoiceTypes(FBR_DOC_TYPES as any);
+      setTransactionTypes(FBR_TRANS_TYPES as any);
+      setUoms(FBR_UOMS as any);
 
-        console.log('Generated invoice number:', autoInvoiceNumber);
+      // Handle Local Data
+      if (localRes.ok) {
+        const data = await localRes.json();
+        setCustomers(data.customers || []);
+        setProducts(data.products || []);
+        setDefaultHsCode(data.defaultHsCode || '');
 
-        setFormData(prev => ({ ...prev, invoice_number: autoInvoiceNumber }));
-        
-        // Also set default HS code if available
-        const hsCode = data.settings?.default_hs_code || '';
-        setDefaultHsCode(hsCode);
-        console.log('Default HS Code:', hsCode);
-        
-        // Update first item with default HS code
-        if (hsCode) {
-          setItems(prev => prev.map((item, idx) => 
-            idx === 0 ? { ...item, hs_code: hsCode } : item
-          ));
-        }
-      } else {
-        console.error('Failed to fetch settings:', response.status);
+        setFormData(prev => ({
+          ...prev,
+          invoice_number: data.nextInvoiceNumber,
+          sales_tax_rate: data.defaultSalesTaxRate?.toString() || '18',
+          further_tax_rate: data.defaultFurtherTaxRate?.toString() || '',
+          scenario: data.defaultScenario || 'SN002',
+        }));
       }
+
+      console.log('✅ All initial data loaded (using local FBR data)');
     } catch (error) {
-      console.error('Error generating invoice number:', error);
+      console.error('Error loading initial data:', error);
+      setError('Error loading initial data. Please check your connection.');
+      toast.error('Network Error', 'Please check your internet connection.');
+    } finally {
+      setInitialLoading(false);
+    }
+  };
+
+  // Refresh FBR Reference Data from API
+  const refreshFBRReferenceData = async () => {
+    try {
+      toast.info('Refreshing...', 'Fetching latest FBR reference data...');
+
+      const [provRes, docRes, transRes, uomRes] = await Promise.all([
+        fetch(`/api/fbr/reference?type=provinces&company_id=${companyId}`),
+        fetch(`/api/fbr/reference?type=doctypes&company_id=${companyId}`),
+        fetch(`/api/fbr/reference?type=transtypes&company_id=${companyId}`),
+        fetch(`/api/fbr/reference?type=uoms&company_id=${companyId}`)
+      ]);
+
+      if (provRes.ok) setProvinces(await provRes.json());
+      if (docRes.ok) setInvoiceTypes(await docRes.json());
+      if (transRes.ok) setTransactionTypes(await transRes.json());
+      if (uomRes.ok) setUoms(await uomRes.json());
+
+      toast.success('Refreshed', 'FBR reference data updated successfully!');
+    } catch (error) {
+      console.error('Error refreshing FBR data:', error);
+      toast.error('Refresh Failed', 'Could not fetch latest FBR data. Using local data.');
     }
   };
 
@@ -179,30 +257,6 @@ export default function NewInvoicePage() {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, [items]);
-
-  const loadCustomers = async (companyId: string) => {
-    try {
-      const response = await fetch(`/api/seller/customers?company_id=${companyId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setCustomers(data.filter((c: Customer) => c.is_active));
-      }
-    } catch (error) {
-      console.error('Error loading customers:', error);
-    }
-  };
-
-  const loadProducts = async (companyId: string) => {
-    try {
-      const response = await fetch(`/api/seller/products?company_id=${companyId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data.products);
-      }
-    } catch (error) {
-      console.error('Error loading products:', error);
-    }
-  };
 
   const handleCustomerSelect = (customerId: string) => {
     setSelectedCustomerId(customerId);
@@ -218,30 +272,18 @@ export default function NewInvoicePage() {
         buyer_registration_type: (customer as any).registration_type || 'Unregistered',
       });
       setCustomerSearchTerm('');
+
+      // Validate selected customer
+      if (customer.ntn_cnic) {
+        validateBuyerNTN(customer.ntn_cnic);
+      }
     }
   };
 
   const handleCustomerSearch = (searchTerm: string) => {
     setCustomerSearchTerm(searchTerm);
-
-    // If no customers match, automatically switch to manual entry
-    const matchingCustomers = customers.filter((c) =>
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.business_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    if (searchTerm && matchingCustomers.length === 0) {
-      setBuyerMode('manual');
-      setManualBuyer({
-        buyer_name: searchTerm,
-        buyer_business_name: '',
-        buyer_ntn_cnic: '',
-        buyer_gst_number: '',
-        buyer_address: '',
-        buyer_province: '',
-        buyer_registration_type: 'Unregistered',
-      });
-    }
+    // Don't automatically switch to manual mode
+    // Let user explicitly choose manual entry if needed
   };
 
   const filteredCustomers = customers.filter((c) =>
@@ -262,6 +304,7 @@ export default function NewInvoicePage() {
         uom: product.uom,
         unit_price: product.unit_price.toString(),
         quantity: newItems[index].quantity,
+        sale_type: 'Goods at standard rate (default)',
         searchTerm: '',
         showDropdown: false,
       };
@@ -305,22 +348,71 @@ export default function NewInvoicePage() {
     );
   };
 
+  // Auto-save item to products table when all required fields are filled
+  const autoSaveToProducts = async (item: InvoiceItem) => {
+    // Only auto-save if item has all required fields and is not already linked to a product
+    if (!item.product_id && item.item_name && item.hs_code && item.uom && item.unit_price) {
+      try {
+        // Check if product already exists with same name
+        const existingProduct = products.find(
+          p => p.name.toLowerCase() === item.item_name.toLowerCase()
+        );
+
+        if (!existingProduct) {
+          // Create new product
+          const response = await fetch('/api/seller/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              company_id: companyId,
+              name: item.item_name,
+              hs_code: item.hs_code,
+              uom: item.uom,
+              unit_price: parseFloat(item.unit_price),
+              current_stock: 0, // Default stock
+              is_active: true,
+            }),
+          });
+
+          if (response.ok) {
+            const newProduct = await response.json();
+            // Add to products list
+            setProducts([...products, newProduct]);
+            console.log('Auto-saved product:', newProduct.name);
+          }
+        }
+      } catch (error) {
+        console.error('Error auto-saving product:', error);
+        // Don't show error to user, just log it
+      }
+    }
+  };
+
   const handleItemChange = (index: number, field: keyof InvoiceItem, value: string) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
     setItems(newItems);
+
+    // Auto-save to products when unit_price is filled (last required field)
+    if (field === 'unit_price' && value) {
+      autoSaveToProducts(newItems[index]);
+    }
   };
 
   const addItem = () => {
+    // Auto-fill all fields from previous item
+    const previousItem = items[items.length - 1];
+
     setItems([
       ...items,
       {
         product_id: null,
-        item_name: '',
-        hs_code: defaultHsCode, // Use default HS code from settings
-        uom: 'Numbers, pieces, units',
-        unit_price: '',
-        quantity: '',
+        item_name: previousItem?.item_name || '',
+        hs_code: previousItem?.hs_code || defaultHsCode,
+        uom: previousItem?.uom || 'Numbers, pieces, units',
+        unit_price: previousItem?.unit_price || '',
+        quantity: '', // Always start with empty quantity
+        sale_type: previousItem?.sale_type || 'Goods at standard rate (default)',
         searchTerm: '',
         showDropdown: false,
       },
@@ -352,6 +444,58 @@ export default function NewInvoicePage() {
     return subtotal + salesTax + furtherTax;
   };
 
+  // Validate Buyer NTN
+  const validateBuyerNTN = async (ntn: string) => {
+    if (!ntn) return;
+
+    const normalized = normalizeNTN(ntn);
+    if (!normalized.isValid) {
+      toast.error('Invalid NTN/CNIC', normalized.error || 'Invalid format');
+      return;
+    }
+
+    setIsValidatingBuyer(true);
+    try {
+      // 1. Check Registration Type
+      const regRes = await fetch('/api/fbr/validate-buyer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'reg_type', ntn: normalized.normalized, company_id: companyId }),
+      });
+
+      if (regRes.ok) {
+        const regData = await regRes.json();
+        if (regData.REGISTRATION_TYPE) {
+          setManualBuyer(prev => ({
+            ...prev,
+            buyer_registration_type: regData.REGISTRATION_TYPE
+          }));
+          toast.success('FBR Verified', `Buyer is ${regData.REGISTRATION_TYPE}`);
+        }
+      }
+
+      // 2. Check Active Status
+      const statusRes = await fetch('/api/fbr/validate-buyer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'status', ntn: normalized.normalized, company_id: companyId }),
+      });
+
+      if (statusRes.ok) {
+        const statusData = await statusRes.json();
+        setBuyerStatus(statusData.status);
+        if (statusData.status === 'In-Active') {
+          toast.error('Warning', 'Buyer is In-Active in FBR records!');
+        }
+      }
+
+    } catch (error) {
+      console.error('Buyer validation failed:', error);
+    } finally {
+      setIsValidatingBuyer(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -380,6 +524,97 @@ export default function NewInvoicePage() {
     }
 
     try {
+      // --- FBR Validation Start ---
+      // 1. Fetch company details to get seller NTN
+      const companyRes = await fetch(`/api/seller/settings?company_id=${companyId}`);
+      if (!companyRes.ok) {
+        throw new Error('Failed to fetch company details');
+      }
+      const companyData = await companyRes.json();
+      const sellerNTN = companyData.company?.ntn_number;
+
+      if (!sellerNTN) {
+        throw new Error('Seller NTN not found. Please update your company settings.');
+      }
+
+      const normalizedSellerNTN = normalizeNTN(sellerNTN);
+      if (!normalizedSellerNTN.isValid) {
+        throw new Error(`Invalid Seller NTN: ${normalizedSellerNTN.error}`);
+      }
+
+      // 2. Normalize buyer NTN
+      const buyerNTN = manualBuyer.buyer_ntn_cnic;
+      const normalizedBuyerNTN = buyerNTN ? normalizeNTN(buyerNTN) : { normalized: '9999999', isValid: true };
+
+      if (!normalizedBuyerNTN.isValid) {
+        setError(normalizedBuyerNTN.error || 'Invalid Buyer NTN/CNIC');
+        setLoading(false);
+        return;
+      }
+
+      // 3. Build FBR payload
+      const fbrPayload = {
+        invoiceType: formData.invoice_type,
+        invoiceDate: formData.invoice_date,
+        sellerNTN: normalizedSellerNTN.normalized,
+        sellerBusinessName: companyData.company?.business_name || companyData.company?.name || 'Unknown Seller',
+        sellerProvince: companyData.company?.province || 'Punjab',
+        sellerAddress: companyData.company?.address || 'Unknown Address',
+        buyerNTNCNIC: normalizedBuyerNTN.normalized,
+        buyerBusinessName: manualBuyer.buyer_business_name || 'Unregistered Buyer',
+        buyerProvince: manualBuyer.buyer_province || 'Sindh',
+        buyerAddress: manualBuyer.buyer_address || 'Karachi',
+        invoiceRefNo: formData.invoice_number || `INV-${Date.now()}`,
+        scenarioId: formData.scenario,
+        buyerRegistrationType: manualBuyer.buyer_registration_type,
+        items: items.map(item => ({
+          hsCode: item.hs_code,
+          productDescription: item.item_name,
+          rate: formData.sales_tax_rate + '%',
+          uoM: item.uom,
+          quantity: parseFloat(item.quantity),
+          totalValues: 0, // Calculated by FBR or backend?
+          valueSalesExcludingST: parseFloat(item.unit_price) * parseFloat(item.quantity),
+          fixedNotifiedValueOrRetailPrice: 0.0,
+          salesTaxApplicable: (parseFloat(item.unit_price) * parseFloat(item.quantity) * parseFloat(formData.sales_tax_rate)) / 100,
+          salesTaxWithheldAtSource: 0,
+          extraTax: 0,
+          furtherTax: 0,
+          sroScheduleNo: "",
+          fedPayable: 0,
+          discount: 0,
+          saleType: item.sale_type,
+          sroItemSerialNo: ""
+        }))
+      };
+
+      // // 1. Validate with FBR
+      // const validationRes = await fetch('/api/fbr/validate-invoice', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ invoiceData: fbrPayload, company_id: companyId }),
+      // });
+
+      // if (!validationRes.ok) {
+      //   const errorData = await validationRes.json();
+      //   throw new Error(errorData.error || 'FBR Validation Failed');
+      // }
+
+      // const validationData = await validationRes.json();
+
+      // // Check for FBR Error Response
+      // if (validationData.validationResponse && validationData.validationResponse.status === 'Invalid') {
+      //   const fbrError = validationData.validationResponse.error || validationData.validationResponse.errorCode || 'Unknown FBR Error';
+      //   throw new Error(`FBR Error: ${fbrError}`);
+      // }
+
+      // if (validationData.Response && validationData.Response !== '00') {
+      //   throw new Error(`FBR Error: ${validationData.Response} - ${validationData.Errors || 'Unknown Error'}`);
+      // }
+
+      // toast.success('FBR Validated', 'Invoice data is valid according to FBR.');
+      // // --- FBR Validation End ---
+
       const response = await fetch('/api/seller/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -395,7 +630,8 @@ export default function NewInvoicePage() {
       if (response.ok) {
         const invoice = await response.json();
         toast.success('Invoice Created', 'Invoice has been created successfully!');
-        router.push(`/seller/invoices/${invoice.id}`);
+        setCreatedInvoiceId(invoice.id);
+        setShowSuccessModal(true);
       } else {
         const errorData = await response.json();
         const errorMessage = errorData.error || 'Failed to create invoice';
@@ -417,8 +653,121 @@ export default function NewInvoicePage() {
   const furtherTax = calculateTax(formData.further_tax_rate);
   const total = calculateTotal();
 
+  const handleCreateAnother = () => {
+    setShowSuccessModal(false);
+    setCreatedInvoiceId('');
+    // Reset form
+    setFormData({
+      invoice_number: '',
+      po_number: '',
+      invoice_date: new Date().toISOString().split('T')[0],
+      invoice_type: 'Sale Invoice',
+      scenario: 'SN002',
+      sales_tax_rate: '18',
+      further_tax_rate: '',
+      payment_status: 'pending',
+      notes: '',
+    });
+    setSelectedCustomerId('');
+    setCustomerSearchTerm('');
+    setManualBuyer({
+      buyer_name: '',
+      buyer_business_name: '',
+      buyer_ntn_cnic: '',
+      buyer_gst_number: '',
+      buyer_address: '',
+      buyer_province: '',
+      buyer_registration_type: 'Unregistered',
+    });
+    setItems([
+      {
+        product_id: null,
+        item_name: '',
+        hs_code: defaultHsCode,
+        uom: 'Numbers, pieces, units',
+        unit_price: '',
+        quantity: '',
+        sale_type: 'Goods at standard rate (default)',
+        searchTerm: '',
+        showDropdown: false,
+      },
+    ]);
+    setError('');
+    // Reload initial data to get new invoice number
+    loadInitialData(companyId);
+  };
+
+  const handleViewInvoice = () => {
+    router.push(`/seller/invoices/${createdInvoiceId}`);
+  };
+
+  // Show loading skeleton while initial data loads
+  if (initialLoading) {
+    return (
+      <>
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Create New Invoice</h1>
+              <p className="text-sm text-gray-600">Loading form data...</p>
+            </div>
+          </div>
+          <FormSkeleton />
+        </div>
+      </>
+    );
+  }
+
   return (
-    <SellerLayout>
+    <>
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+                <svg
+                  className="h-10 w-10 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Invoice Created!</h3>
+              <p className="text-gray-600 mb-6">
+                Your invoice has been created successfully. What would you like to do next?
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={handleViewInvoice}
+                  className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                >
+                  View Invoice
+                </button>
+                <button
+                  onClick={handleCreateAnother}
+                  className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                >
+                  Create Another Invoice
+                </button>
+                <button
+                  onClick={() => router.push('/seller/invoices')}
+                  className="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                >
+                  Go to Invoice List
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
@@ -426,12 +775,24 @@ export default function NewInvoicePage() {
             <h1 className="text-2xl font-bold text-gray-900">Create New Invoice</h1>
             <p className="text-sm text-gray-600">Generate a sales invoice</p>
           </div>
-          <Link
-            href="/seller/invoices"
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-          >
-            ← Back to Invoices
-          </Link>
+          <div className="flex gap-3">
+            <button
+              onClick={refreshFBRReferenceData}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
+              title="Fetch latest FBR reference data (provinces, UOMs, transaction types)"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh FBR Data
+            </button>
+            <Link
+              href="/seller/invoices"
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+            >
+              ← Back to Invoices
+            </Link>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -495,11 +856,15 @@ export default function NewInvoicePage() {
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  {INVOICE_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
+                  {invoiceTypes.length > 0 ? (
+                    invoiceTypes.map((type) => (
+                      <option key={type.docTypeId} value={type.docDescription}>
+                        {type.docDescription}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="Sale Invoice">Sale Invoice</option>
+                  )}
                 </select>
               </div>
               <div>
@@ -579,22 +944,20 @@ export default function NewInvoicePage() {
                 <button
                   type="button"
                   onClick={() => setBuyerMode('customer')}
-                  className={`px-4 py-2 rounded-lg text-sm ${
-                    buyerMode === 'customer'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700'
-                  }`}
+                  className={`px-4 py-2 rounded-lg text-sm ${buyerMode === 'customer'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700'
+                    }`}
                 >
                   Select Customer
                 </button>
                 <button
                   type="button"
                   onClick={() => setBuyerMode('manual')}
-                  className={`px-4 py-2 rounded-lg text-sm ${
-                    buyerMode === 'manual'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700'
-                  }`}
+                  className={`px-4 py-2 rounded-lg text-sm ${buyerMode === 'manual'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700'
+                    }`}
                 >
                   Manual Entry
                 </button>
@@ -711,15 +1074,25 @@ export default function NewInvoicePage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   NTN/CNIC <span className="text-gray-500 text-xs">(Dashes allowed)</span>
                 </label>
-                <input
-                  type="text"
-                  value={manualBuyer.buyer_ntn_cnic}
-                  onChange={(e) =>
-                    setManualBuyer({ ...manualBuyer, buyer_ntn_cnic: e.target.value })
-                  }
-                  disabled={buyerMode === 'customer' && !!selectedCustomerId}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={manualBuyer.buyer_ntn_cnic}
+                    onChange={(e) => setManualBuyer({ ...manualBuyer, buyer_ntn_cnic: e.target.value })}
+                    onBlur={(e) => validateBuyerNTN(e.target.value)}
+                    disabled={buyerMode === 'customer' && !!selectedCustomerId}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${buyerStatus === 'In-Active' ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                      }`}
+                  />
+                  {isValidatingBuyer && (
+                    <div className="absolute right-3 top-2">
+                      <div className="animate-spin h-5 w-5 border-2 border-blue-500 rounded-full border-t-transparent"></div>
+                    </div>
+                  )}
+                </div>
+                {buyerStatus === 'In-Active' && (
+                  <p className="text-xs text-red-600 mt-1">⚠️ Buyer is In-Active in FBR records</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -763,15 +1136,19 @@ export default function NewInvoicePage() {
                   onChange={(e) =>
                     setManualBuyer({ ...manualBuyer, buyer_province: e.target.value })
                   }
-                  disabled={buyerMode === 'customer' && !!selectedCustomerId}
+                  // disabled={buyerMode === 'customer' && !!selectedCustomerId}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                 >
                   <option value="">Select Province</option>
-                  {PROVINCES?.map((province) => (
-                    <option key={province} value={province}>
-                      {province}
-                    </option>
-                  ))}
+                  {provinces.length > 0 ? (
+                    provinces.map((p) => (
+                      <option key={p.stateProvinceCode} value={p.stateProvinceDesc}>
+                        {p.stateProvinceDesc}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="Sindh">Sindh</option>
+                  )}
                 </select>
               </div>
               <div className="md:col-span-2">
@@ -896,38 +1273,35 @@ export default function NewInvoicePage() {
                         onChange={(e) => handleItemChange(index, 'uom', e.target.value)}
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="Numbers, pieces, units">Numbers, pieces, units</option>
-                        <option value="Pcs">Pcs</option>
-                        <option value="KG">KG</option>
-                        <option value="Kilogram">Kilogram</option>
-                        <option value="Gram">Gram</option>
-                        <option value="MT">MT</option>
-                        <option value="Liter">Liter</option>
-                        <option value="Gallon">Gallon</option>
-                        <option value="Meter">Meter</option>
-                        <option value="Foot">Foot</option>
-                        <option value="Square Metre">Square Metre</option>
-                        <option value="Square Foot">Square Foot</option>
-                        <option value="SqY">SqY</option>
-                        <option value="Cubic Metre">Cubic Metre</option>
-                        <option value="Dozen">Dozen</option>
-                        <option value="Pair">Pair</option>
-                        <option value="SET">SET</option>
-                        <option value="Bag">Bag</option>
-                        <option value="Packs">Packs</option>
-                        <option value="Pound">Pound</option>
-                        <option value="Carat">Carat</option>
-                        <option value="40KG">40KG</option>
-                        <option value="KWH">KWH</option>
-                        <option value="1000 kWh">1000 kWh</option>
-                        <option value="MMBTU">MMBTU</option>
-                        <option value="Mega Watt">Mega Watt</option>
-                        <option value="Thousand Unit">Thousand Unit</option>
-                        <option value="Bill of lading">Bill of lading</option>
-                        <option value="Timber Logs">Timber Logs</option>
-                        <option value="Barrels">Barrels</option>
-                        <option value="NO">NO</option>
-                        <option value="Others">Others</option>
+                        {uoms.length > 0 ? (
+                          uoms.map((u) => (
+                            <option key={u.uoM_ID} value={u.description}>
+                              {u.description}
+                            </option>
+                          ))
+                        ) : (
+                          <option value="Numbers, pieces, units">Numbers, pieces, units</option>
+                        )}
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Sale Type <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={item.sale_type}
+                        onChange={(e) => handleItemChange(index, 'sale_type', e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      >
+                        {transactionTypes.length > 0 ? (
+                          transactionTypes.map((t) => (
+                            <option key={t.transactioN_TYPE_ID} value={t.transactioN_DESC}>
+                              {t.transactioN_DESC}
+                            </option>
+                          ))
+                        ) : (
+                          <option value="Goods at standard rate (default)">Goods at standard rate (default)</option>
+                        )}
                       </select>
                     </div>
                     <div>
@@ -992,7 +1366,7 @@ export default function NewInvoicePage() {
 
           {/* Tax & Totals */}
           <div className="bg-white rounded-lg shadow p-6">
-    
+
 
             <div className="border-t border-gray-200 pt-4 space-y-2">
               <div className="flex justify-between text-gray-700">
@@ -1034,7 +1408,7 @@ export default function NewInvoicePage() {
           </div>
         </form>
       </div>
-    </SellerLayout>
+    </>
   );
 }
 

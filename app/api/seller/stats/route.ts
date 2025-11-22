@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase-server';
+import { cachedJsonResponse, CachePresets } from '@/lib/api-response-cache';
+
+const supabase = getSupabaseServer();
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,12 +42,16 @@ export async function GET(request: NextRequest) {
       .eq('company_id', companyId)
       .eq('status', 'pending');
 
-    return NextResponse.json({
-      totalProducts: totalProducts || 0,
-      lowStockProducts: lowStockProducts || 0,
-      totalCustomers: totalCustomers || 0,
-      pendingInvoices: pendingInvoices || 0,
-    });
+    // Return with cache headers (30 seconds cache, 60 seconds stale-while-revalidate)
+    return cachedJsonResponse(
+      {
+        totalProducts: totalProducts || 0,
+        lowStockProducts: lowStockProducts || 0,
+        totalCustomers: totalCustomers || 0,
+        pendingInvoices: pendingInvoices || 0,
+      },
+      CachePresets.SHORT
+    );
   } catch (error: any) {
     console.error('Error fetching stats:', error);
     return NextResponse.json(

@@ -155,8 +155,7 @@ export default function EditInvoicePage() {
     const userData = JSON.parse(session);
     setCompanyId(userData.company_id);
     loadInvoice(userData.company_id);
-    loadCustomers(userData.company_id);
-    loadProducts(userData.company_id);
+    loadInitialData(userData.company_id);
   }, [router, params.id]);
 
   const loadInvoice = async (companyId: string) => {
@@ -170,8 +169,8 @@ export default function EditInvoicePage() {
         setInvoice(data);
         
         // Check if invoice can be edited
-        if (data.status !== 'draft') {
-          setError('Only draft invoices can be edited');
+        if (data.status !== 'draft' && data.status !== 'verified') {
+          setError('Only draft and verified invoices can be edited');
           return;
         }
 
@@ -243,6 +242,21 @@ export default function EditInvoicePage() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [items]);
 
+  // Load customers and products using optimized init-data endpoint
+  const loadInitialData = async (companyId: string) => {
+    try {
+      const response = await fetch(`/api/seller/invoices/init-data?company_id=${companyId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCustomers(data.customers || []);
+        setProducts(data.products || []);
+        console.log('✅ Loaded customers and products from init-data endpoint');
+      }
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+    }
+  };
+
   const loadCustomers = async (companyId: string) => {
     try {
       const response = await fetch(`/api/seller/customers?company_id=${companyId}`);
@@ -286,25 +300,8 @@ export default function EditInvoicePage() {
 
   const handleCustomerSearch = (searchTerm: string) => {
     setCustomerSearchTerm(searchTerm);
-
-    // If no customers match, automatically switch to manual entry
-    const matchingCustomers = customers.filter((c) =>
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.business_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    if (searchTerm && matchingCustomers.length === 0) {
-      setBuyerMode('manual');
-      setManualBuyer({
-        buyer_name: searchTerm,
-        buyer_business_name: '',
-        buyer_ntn_cnic: '',
-        buyer_gst_number: '',
-        buyer_address: '',
-        buyer_province: '',
-        buyer_registration_type: 'Unregistered',
-      });
-    }
+    // Don't automatically switch to manual mode
+    // Let user explicitly choose manual entry if needed
   };
 
   const filteredCustomers = customers.filter((c) =>
@@ -375,12 +372,16 @@ export default function EditInvoicePage() {
   };
 
   const addItem = () => {
+    // Get HS code from previous item for convenience
+    const previousItem = items[items.length - 1];
+    const hsCodeToUse = previousItem?.hs_code || '';
+    
     setItems([
       ...items,
       {
         product_id: null,
         item_name: '',
-        hs_code: '',
+        hs_code: hsCodeToUse, // Auto-fill from previous item
         uom: 'Numbers, pieces, units',
         unit_price: '',
         quantity: '',
@@ -481,17 +482,17 @@ export default function EditInvoicePage() {
 
   if (loading) {
     return (
-      <SellerLayout>
+      <>
         <div className="p-6">
           <div className="text-center py-12">Loading invoice...</div>
         </div>
-      </SellerLayout>
+      </>
     );
   }
 
   if (error && !invoice) {
     return (
-      <SellerLayout>
+      <>
         <div className="p-6">
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
             {error}
@@ -503,19 +504,19 @@ export default function EditInvoicePage() {
             ← Back to Invoices
           </Link>
         </div>
-      </SellerLayout>
+      </>
     );
   }
 
   return (
-    <SellerLayout>
+    <>
       <div className="p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Edit Invoice</h1>
             <p className="text-sm text-gray-600">
-              Editing: {formData.invoice_number} (Draft)
+              Editing: {formData.invoice_number} ({invoice?.status === 'verified' ? 'Verified' : 'Draft'})
             </p>
           </div>
           <div className="flex gap-2">
@@ -843,7 +844,7 @@ export default function EditInvoicePage() {
                   onChange={(e) =>
                     setManualBuyer({ ...manualBuyer, buyer_province: e.target.value })
                   }
-                  disabled={buyerMode === 'customer' && !!selectedCustomerId}
+                  // disabled={buyerMode === 'customer' && !!selectedCustomerId}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                 >
                   <option value="">Select Province</option>
@@ -1105,6 +1106,6 @@ export default function EditInvoicePage() {
           </div>
         </form>
       </div>
-    </SellerLayout>
+    </>
   );
 }

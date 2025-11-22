@@ -164,6 +164,9 @@ Create these blog posts (add to `app/blog/` folder):
 4. **PageSpeed Insights** - Monitor site speed
 5. **GTmetrix** - Performance monitoring
 
+
+
+
 ### **Key Metrics to Track:**
 - Organic traffic (visitors from Google)
 - Keyword rankings

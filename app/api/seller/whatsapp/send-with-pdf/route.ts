@@ -1,11 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServer } from '@/lib/supabase-server';
 import { WhatsAppBusinessAPI, formatWhatsAppNumber } from '@/lib/whatsapp-business';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = getSupabaseServer();
 
 export async function POST(request: Request) {
   try {
@@ -42,7 +39,7 @@ export async function POST(request: Request) {
     // Check if WhatsApp Business API is configured
     if (!company.whatsapp_phone_number_id || !company.whatsapp_access_token) {
       return NextResponse.json(
-        { 
+        {
           error: 'WhatsApp Business API not configured. Please add your Phone Number ID and Access Token in Settings.',
           fallback: true // Indicates client should use wa.me fallback
         },
@@ -68,14 +65,14 @@ export async function POST(request: Request) {
     // Determine customer phone number
     let phoneNumber = customer_phone;
     let customerName = invoice.buyer_name || 'Valued Customer';
-    
+
     if (invoice.customer_id) {
       const { data: customer } = await supabase
         .from('customers')
         .select('name, phone, business_name')
         .eq('id', invoice.customer_id)
         .single();
-      
+
       if (customer) {
         if (!phoneNumber && customer.phone) {
           phoneNumber = customer.phone;
@@ -103,7 +100,7 @@ export async function POST(request: Request) {
       day: 'numeric'
     });
 
-    let message = company.whatsapp_message_template || 
+    let message = company.whatsapp_message_template ||
       `Hello {customer_name},\n\nYour invoice {invoice_number} for Rs. {total_amount} is ready.\n\nPlease find the invoice PDF attached.\n\nThank you for your business!\n\n{company_name}`;
 
     message = message
@@ -144,8 +141,6 @@ export async function POST(request: Request) {
         message_text: message,
         status: 'sent',
         sent_at: new Date().toISOString(),
-      }).catch(() => {
-        // Ignore if table doesn't exist
       });
 
       return NextResponse.json({
@@ -156,7 +151,7 @@ export async function POST(request: Request) {
       });
     } else {
       return NextResponse.json(
-        { 
+        {
           error: result.error || 'Failed to send WhatsApp message',
           details: result.details,
           fallback: true // Indicates client should use wa.me fallback
@@ -168,7 +163,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Error sending WhatsApp with PDF:', error);
     return NextResponse.json(
-      { 
+      {
         error: error.message || 'Failed to send WhatsApp message',
         fallback: true
       },

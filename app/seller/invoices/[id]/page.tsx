@@ -78,6 +78,10 @@ export default function InvoiceDetailPage() {
   const [whatsappMessage, setWhatsappMessage] = useState('');
   const [whatsappLink, setWhatsappLink] = useState('');
   const [showMessagePreview, setShowMessagePreview] = useState(false);
+  const [showPayloadPreviewModal, setShowPayloadPreviewModal] = useState(false);
+  const [previewPayload, setPreviewPayload] = useState<any>(null);
+  const [validationStep, setValidationStep] = useState<'preview' | 'validating' | 'result'>('preview');
+  const [loadingPayload, setLoadingPayload] = useState(false);
 
   useEffect(() => {
     const session = localStorage.getItem('seller_session');
@@ -301,15 +305,68 @@ export default function InvoiceDetailPage() {
   };
 
   const handlePostToFBR = async () => {
-    const confirmed = await confirm({
-      title: 'Post to FBR',
-      message: 'Are you sure you want to post this invoice to FBR? This action will change the invoice status to FBR Posted.',
-      confirmText: 'Post to FBR',
-      cancelText: 'Cancel',
-      type: 'warning'
-    });
-    if (!confirmed) return;
+    // Step 1: Show payload preview modal
+    setValidationStep('preview');
+    setShowPayloadPreviewModal(true);
+    setFbrValidationResult(null);
+    setPreviewPayload(null);
+    setLoadingPayload(true);
 
+    // Fetch the payload that will be sent
+    try {
+      const response = await fetch(
+        `/api/seller/invoices/${params.id}/validate-fbr?company_id=${companyId}&preview=true`,
+        { method: 'POST' }
+      );
+      const data = await response.json();
+      setPreviewPayload(data.payload || data);
+    } catch (error) {
+      console.error('Error fetching payload:', error);
+      toast.error('Error', 'Failed to generate payload preview');
+      setShowPayloadPreviewModal(false);
+    } finally {
+      setLoadingPayload(false);
+    }
+  };
+
+  const handleConfirmAndValidate = async () => {
+    // Step 2: Run validation
+    setValidationStep('validating');
+    setFbrValidationResult(null);
+
+    try {
+      const response = await fetch(
+        `/api/seller/invoices/${params.id}/validate-fbr?company_id=${companyId}`,
+        { method: 'POST' }
+      );
+
+      const data = await response.json();
+      setFbrValidationResult(data);
+      setValidationStep('result');
+
+      // Check if validation passed or has warnings
+      const hasInvalidStatus = data.fbrResponse?.validationResponse?.status === 'Invalid';
+
+      if (!hasInvalidStatus && data.success) {
+        // Validation passed, proceed automatically after 2 seconds
+        toast.success('Validation Passed', 'Invoice is valid. Proceeding to post...');
+        setTimeout(() => {
+          proceedWithPosting();
+        }, 2000);
+      }
+      // If has warnings or errors, user must confirm manually
+    } catch (error) {
+      console.error('Error validating with FBR:', error);
+      setFbrValidationResult({
+        success: false,
+        error: 'Network error occurred while validating with FBR',
+      });
+      setValidationStep('result');
+    }
+  };
+
+  const proceedWithPosting = async () => {
+    setShowPayloadPreviewModal(false);
     setPostingToFbr(true);
     setFbrPostResult(null);
     setShowFbrPostModal(true);
@@ -317,16 +374,13 @@ export default function InvoiceDetailPage() {
     try {
       const response = await fetch(
         `/api/seller/invoices/${params.id}/post-fbr?company_id=${companyId}`,
-        {
-          method: 'POST',
-        }
+        { method: 'POST' }
       );
 
       const data = await response.json();
       setFbrPostResult(data);
 
       if (response.ok && data.success) {
-        // Reload invoice to get updated status and FBR data
         setTimeout(() => {
           loadInvoice(companyId);
         }, 2000);
@@ -409,26 +463,26 @@ export default function InvoiceDetailPage() {
 
   if (loading) {
     return (
-      <SellerLayout>
+      <>
         <div className="p-6">
           <div className="text-center py-12">Loading invoice...</div>
         </div>
-      </SellerLayout>
+      </>
     );
   }
 
   if (!invoice) {
     return (
-      <SellerLayout>
+      <>
         <div className="p-6">
           <div className="text-center py-12">Invoice not found</div>
         </div>
-      </SellerLayout>
+      </>
     );
   }
 
   return (
-    <SellerLayout>
+    <>
       <div className="p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
@@ -444,8 +498,8 @@ export default function InvoiceDetailPage() {
               ← Back to Invoices
             </Link>
 
-            {/* Edit Button - Only show for draft invoices */}
-            {invoice.status === 'draft' && (
+            {/* Edit Button - Show for draft and verified invoices */}
+            {(invoice.status === 'draft' || invoice.status === 'verified') && (
               <Link
                 href={`/seller/invoices/${params.id}/edit`}
                 className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-semibold flex items-center gap-2"
@@ -456,7 +510,7 @@ export default function InvoiceDetailPage() {
 
             {/* Print Button */}
             <Link
-              href={`/seller/invoices/${params.id}/print?template=${selectedTemplate}`}
+              href={`/print/${params.id}/print?template=${selectedTemplate}`}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold flex items-center gap-2"
             >
               🖨️ Print Invoice
@@ -501,9 +555,9 @@ export default function InvoiceDetailPage() {
               {invoice.payment_status.toUpperCase()}
             </span>
           </div>
-          {invoice.status !== 'draft' && (
+          {invoice.status !== 'draft' && invoice.status !== 'verified' && (
             <div className="text-sm text-gray-500 italic">
-              ℹ️ Only draft invoices can be edited
+              ℹ️ Only draft and verified invoices can be edited
             </div>
           )}
         </div>
@@ -736,6 +790,12 @@ export default function InvoiceDetailPage() {
                   Complete Invoice (Mark as Paid)
                 </button>
                 <button
+                  onClick={() => handleStatusChange('draft')}
+                  className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-semibold flex items-center gap-2"
+                >
+                  ↩️ Mark as Unverified (Draft)
+                </button>
+                <button
                   onClick={handleValidateWithFBR}
                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center gap-2"
                 >
@@ -785,9 +845,8 @@ export default function InvoiceDetailPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               href={`/seller/customers/${invoice.customer?.id}`}
-              className={`px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 ${
-                !invoice.customer ? 'opacity-50 pointer-events-none' : ''
-              }`}
+              className={`px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 ${!invoice.customer ? 'opacity-50 pointer-events-none' : ''
+                }`}
             >
               View Customer
             </Link>
@@ -835,11 +894,10 @@ export default function InvoiceDetailPage() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Remaining:</span>
-                      <span className={`text-lg font-semibold ${
-                        (invoice.total_amount - parseFloat(partialPaymentAmount)) === 0
-                          ? 'text-green-700'
-                          : 'text-orange-700'
-                      }`}>
+                      <span className={`text-lg font-semibold ${(invoice.total_amount - parseFloat(partialPaymentAmount)) === 0
+                        ? 'text-green-700'
+                        : 'text-orange-700'
+                        }`}>
                         PKR {(invoice.total_amount - parseFloat(partialPaymentAmount)).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
@@ -906,30 +964,43 @@ export default function InvoiceDetailPage() {
                 {!validatingFbr && fbrValidationResult && (
                   <div className="space-y-4">
                     {/* Success/Error Badge */}
-                    <div className={`p-4 rounded-lg ${
-                      fbrValidationResult.success
+                    <div className={`p-4 rounded-lg ${fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid'
+                      ? 'bg-yellow-50 border border-yellow-200'
+                      : fbrValidationResult.success
                         ? 'bg-green-50 border border-green-200'
                         : 'bg-red-50 border border-red-200'
-                    }`}>
+                      }`}>
                       <div className="flex items-center gap-3">
-                        <span className={`text-3xl ${
-                          fbrValidationResult.success ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {fbrValidationResult.success ? '✓' : '✗'}
+                        <span className={`text-3xl ${fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid'
+                          ? 'text-yellow-600'
+                          : fbrValidationResult.success ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                          {fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid' ? '⚠' : fbrValidationResult.success ? '✓' : '✗'}
                         </span>
                         <div>
-                          <h3 className={`text-lg font-semibold ${
-                            fbrValidationResult.success ? 'text-green-900' : 'text-red-900'
-                          }`}>
-                            {fbrValidationResult.success
-                              ? 'Validation Successful'
-                              : 'Validation Failed'}
+                          <h3 className={`text-lg font-semibold ${fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid'
+                            ? 'text-yellow-900'
+                            : fbrValidationResult.success ? 'text-green-900' : 'text-red-900'
+                            }`}>
+                            {fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid'
+                              ? 'FBR Validation Warning'
+                              : fbrValidationResult.success
+                                ? 'Validation Successful'
+                                : 'Validation Failed'}
                           </h3>
-                          <p className={`text-sm ${
-                            fbrValidationResult.success ? 'text-green-700' : 'text-red-700'
-                          }`}>
-                            {fbrValidationResult.message || fbrValidationResult.error}
+                          <p className={`text-sm ${fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid'
+                            ? 'text-yellow-700'
+                            : fbrValidationResult.success ? 'text-green-700' : 'text-red-700'
+                            }`}>
+                            {fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid'
+                              ? `FBR returned a warning: ${fbrValidationResult.fbrResponse.validationResponse.error || 'Please review the details below'}`
+                              : fbrValidationResult.message || fbrValidationResult.error}
                           </p>
+                          {fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid' && (
+                            <p className="text-xs text-yellow-600 mt-2">
+                              ℹ️ You can still proceed with posting this invoice, but please review the warning above.
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -979,6 +1050,150 @@ export default function InvoiceDetailPage() {
           </div>
         )}
 
+        {/* Payload Preview & Validation Modal */}
+        {showPayloadPreviewModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {validationStep === 'preview' && '📋 Review Payload Before Posting'}
+                    {validationStep === 'validating' && '⏳ Validating with FBR...'}
+                    {validationStep === 'result' && '📊 Validation Result'}
+                  </h2>
+                  <button
+                    onClick={() => setShowPayloadPreviewModal(false)}
+                    className="text-gray-500 hover:text-gray-700 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {validationStep === 'preview' && (
+                  <div className="space-y-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-sm text-blue-800">
+                        <strong>ℹ️ Review the payload</strong> that will be sent to FBR. Click &quot;Validate & Continue&quot; to run FBR validation before posting.
+                      </p>
+                    </div>
+
+                    {loadingPayload ? (
+                      <div className="text-center py-12">
+                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                        <p className="text-gray-600">Loading payload preview...</p>
+                      </div>
+                    ) : previewPayload ? (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-900 mb-2">Payload to be sent:</h4>
+                        <pre className="text-xs bg-white p-3 rounded border border-gray-300 overflow-x-auto max-h-96">
+                          {JSON.stringify(previewPayload, null, 2)}
+                        </pre>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+
+                {validationStep === 'validating' && (
+                  <div className="text-center py-12">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                    <p className="text-gray-600">Validating invoice with FBR...</p>
+                    <p className="text-sm text-gray-500 mt-2">This may take a few seconds</p>
+                  </div>
+                )}
+
+                {validationStep === 'result' && fbrValidationResult && (
+                  <div className="space-y-4">
+                    {/* Validation Result Badge */}
+                    <div className={`p-4 rounded-lg ${fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid'
+                      ? 'bg-yellow-50 border border-yellow-200'
+                      : fbrValidationResult.success
+                        ? 'bg-green-50 border border-green-200'
+                        : 'bg-red-50 border border-red-200'
+                      }`}>
+                      <div className="flex items-center gap-3">
+                        <span className={`text-3xl ${fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid'
+                          ? 'text-yellow-600'
+                          : fbrValidationResult.success ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                          {fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid' ? '⚠' : fbrValidationResult.success ? '✓' : '✗'}
+                        </span>
+                        <div>
+                          <h3 className={`text-lg font-semibold ${fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid'
+                            ? 'text-yellow-900'
+                            : fbrValidationResult.success ? 'text-green-900' : 'text-red-900'
+                            }`}>
+                            {fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid'
+                              ? 'FBR Validation Warning'
+                              : fbrValidationResult.success
+                                ? 'Validation Successful'
+                                : 'Validation Failed'}
+                          </h3>
+                          <p className={`text-sm ${fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid'
+                            ? 'text-yellow-700'
+                            : fbrValidationResult.success ? 'text-green-700' : 'text-red-700'
+                            }`}>
+                            {fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid'
+                              ? `FBR returned a warning: ${fbrValidationResult.fbrResponse.validationResponse.error || 'Please review the details below'}`
+                              : fbrValidationResult.message || fbrValidationResult.error}
+                          </p>
+                          {fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid' && (
+                            <p className="text-xs text-yellow-600 mt-2">
+                              {/* ⚠️ You can still proceed with posting, but please review the warning above. */}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* FBR Response */}
+                    {fbrValidationResult.fbrResponse && (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-900 mb-2">FBR Response:</h4>
+                        <pre className="text-xs bg-white p-3 rounded border border-gray-300 overflow-x-auto max-h-60">
+                          {JSON.stringify(fbrValidationResult.fbrResponse, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 border-t border-gray-200">
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowPayloadPreviewModal(false)}
+                    className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  {validationStep === 'preview' && (
+                    <button
+                      onClick={handleConfirmAndValidate}
+                      disabled={loadingPayload || !previewPayload}
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      ✓ Validate & Continue
+                    </button>
+                  )}
+                  {validationStep === 'result' && (
+                    <button
+                      onClick={proceedWithPosting}
+                      disabled={fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid'}
+                      className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      {fbrValidationResult.fbrResponse?.validationResponse?.status === 'Invalid'
+                        ? '⚠ Proceed Despite Warning'
+                        : '📤 Post to FBR'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* FBR Post Modal */}
         {showFbrPostModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1007,28 +1222,24 @@ export default function InvoiceDetailPage() {
                 {!postingToFbr && fbrPostResult && (
                   <div className="space-y-4">
                     {/* Success/Error Badge */}
-                    <div className={`p-4 rounded-lg ${
-                      fbrPostResult.success
-                        ? 'bg-green-50 border border-green-200'
-                        : 'bg-red-50 border border-red-200'
-                    }`}>
+                    <div className={`p-4 rounded-lg ${fbrPostResult.success
+                      ? 'bg-green-50 border border-green-200'
+                      : 'bg-red-50 border border-red-200'
+                      }`}>
                       <div className="flex items-center gap-3">
-                        <span className={`text-3xl ${
-                          fbrPostResult.success ? 'text-green-600' : 'text-red-600'
-                        }`}>
+                        <span className={`text-3xl ${fbrPostResult.success ? 'text-green-600' : 'text-red-600'
+                          }`}>
                           {fbrPostResult.success ? '✓' : '✗'}
                         </span>
                         <div>
-                          <h3 className={`text-lg font-semibold ${
-                            fbrPostResult.success ? 'text-green-900' : 'text-red-900'
-                          }`}>
+                          <h3 className={`text-lg font-semibold ${fbrPostResult.success ? 'text-green-900' : 'text-red-900'
+                            }`}>
                             {fbrPostResult.success
                               ? 'Posted to FBR Successfully!'
                               : 'FBR Posting Failed'}
                           </h3>
-                          <p className={`text-sm ${
-                            fbrPostResult.success ? 'text-green-700' : 'text-red-700'
-                          }`}>
+                          <p className={`text-sm ${fbrPostResult.success ? 'text-green-700' : 'text-red-700'
+                            }`}>
                             {fbrPostResult.message || fbrPostResult.error}
                           </p>
                         </div>
@@ -1190,7 +1401,7 @@ export default function InvoiceDetailPage() {
                 <div className="space-y-2 text-sm text-yellow-800">
                   <div className="flex items-start gap-2">
                     <span className="text-green-600 font-bold">1.</span>
-                    <span>Click "Open WhatsApp" below - it will open with the message pre-filled</span>
+                    <span>Click &quot;Open WhatsApp&quot; below - it will open with the message pre-filled</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-green-600 font-bold">2.</span>
@@ -1239,7 +1450,7 @@ export default function InvoiceDetailPage() {
             <div className="p-6 border-b border-gray-200">
               <h3 className="text-xl font-bold text-gray-900">💬 Send Invoice via WhatsApp</h3>
               <p className="text-sm text-gray-600 mt-1">
-                Enter the customer's WhatsApp number to send the invoice
+                Enter the customer&apos;s WhatsApp number to send the invoice
               </p>
             </div>
 
@@ -1304,7 +1515,7 @@ export default function InvoiceDetailPage() {
       )}
 
       <ConfirmDialog />
-    </SellerLayout>
+    </>
   );
 }
 

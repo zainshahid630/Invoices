@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import SubscriptionHeaderBadge from '@/app/components/SubscriptionHeaderBadge';
@@ -15,6 +15,7 @@ interface User {
     id: string;
     name: string;
     business_name: string;
+    ntn_number?: string;
   };
 }
 
@@ -27,9 +28,10 @@ export default function SellerLayout({ children }: SellerLayoutProps) {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isImpersonating, setIsImpersonating] = useState(false);
 
   useEffect(() => {
-    const session = localStorage.getItem('seller_session');
+    const session = localStorage.getItem('session') || localStorage.getItem('seller_session');
     if (!session) {
       router.push('/seller/login');
       return;
@@ -37,67 +39,92 @@ export default function SellerLayout({ children }: SellerLayoutProps) {
 
     const userData = JSON.parse(session);
     setUser(userData);
+    
+    // Check if this is an impersonation session
+    setIsImpersonating(userData.impersonated === true || localStorage.getItem('super_admin_return') === 'true');
+  }, []); // Remove router dependency - it's stable
+
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('seller_session');
+    localStorage.removeItem('session');
+    router.push('/');
   }, [router]);
 
-  const handleLogout = () => {
+  const handleReturnToSuperAdmin = useCallback(() => {
+    // Clear seller session
+    localStorage.removeItem('session');
     localStorage.removeItem('seller_session');
-    router.push('/seller/login');
-  };
+    localStorage.removeItem('super_admin_return');
+    // Redirect to super admin dashboard
+    router.push('/super-admin/dashboard');
+  }, [router]);
 
-  if (!user) {
-    return null;
-  }
+  // Memoize hasSubscriptionAccess to prevent recalculation
+  const hasSubscriptionAccess = useMemo(() => {
+    return user?.company?.ntn_number === '090078601';
+  }, [user?.company?.ntn_number]);
 
-  const navigation = [
+  // Memoize navigation array without pathname dependency to prevent sidebar refresh
+  const navigationItems = useMemo(() => [
     {
       name: 'Dashboard',
       href: '/seller/dashboard',
       icon: '📊',
-      current: pathname === '/seller/dashboard',
     },
     {
       name: 'Products',
       href: '/seller/products',
       icon: '📦',
-      current: pathname?.startsWith('/seller/products'),
     },
     {
       name: 'Customers',
       href: '/seller/customers',
       icon: '👥',
-      current: pathname?.startsWith('/seller/customers'),
     },
     {
       name: 'Invoices',
       href: '/seller/invoices',
       icon: '📄',
-      current: pathname?.startsWith('/seller/invoices'),
     },
     {
       name: 'Payments',
       href: '/seller/payments',
       icon: '💰',
-      current: pathname?.startsWith('/seller/payments'),
     },
     {
       name: 'Reports',
       href: '/seller/reports',
       icon: '📈',
-      current: pathname?.startsWith('/seller/reports'),
     },
+    // Only show Subscription for testing NTN
+    ...(hasSubscriptionAccess ? [{
+      name: 'Subscription',
+      href: '/seller/subscription',
+      icon: '💳',
+    }] : []),
     {
       name: 'Settings',
       href: '/seller/settings',
       icon: '⚙️',
-      current: pathname?.startsWith('/seller/settings'),
     },
     {
       name: 'FBR Sandbox',
       href: '/seller/fbr-sandbox',
       icon: '🧪',
-      current: pathname?.startsWith('/seller/fbr-sandbox'),
     },
-  ];
+  ], [hasSubscriptionAccess]);
+
+  // Helper function to check if a route is current
+  const isCurrentRoute = useCallback((href: string) => {
+    if (href === '/seller/dashboard') {
+      return pathname === href;
+    }
+    return pathname?.startsWith(href);
+  }, [pathname]);
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -112,8 +139,8 @@ export default function SellerLayout({ children }: SellerLayoutProps) {
           <div className="flex items-center justify-between">
             {sidebarOpen ? (
               <div>
-                <h1 className="text-lg font-bold truncate">{user.company.name}</h1>
-                <p className="text-xs text-gray-400 truncate">{user.company.business_name}</p>
+                <h1 className="text-lg font-bold truncate">{user?.company?.name}</h1>
+                <p className="text-xs text-gray-400 truncate">{user?.company?.business_name}</p>
               </div>
             ) : (
               <div className="text-2xl">🏢</div>
@@ -129,29 +156,32 @@ export default function SellerLayout({ children }: SellerLayoutProps) {
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                item.current
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-              }`}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {sidebarOpen && <span className="font-medium">{item.name}</span>}
-            </Link>
-          ))}
+          {navigationItems.map((item) => {
+            const isCurrent = isCurrentRoute(item.href);
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  isCurrent
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                }`}
+              >
+                <span className="text-xl">{item.icon}</span>
+                {sidebarOpen && <span className="font-medium">{item.name}</span>}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* User Info & Logout */}
         <div className="p-4 border-t border-gray-700">
           {sidebarOpen ? (
             <div className="mb-3">
-              <p className="text-sm font-medium truncate">{user.name}</p>
-              <p className="text-xs text-gray-400 truncate">{user.email}</p>
-              <p className="text-xs text-gray-500 mt-1">{user.role}</p>
+              <p className="text-sm font-medium truncate">{user?.name}</p>
+              <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+              <p className="text-xs text-gray-500 mt-1">{user?.role}</p>
             </div>
           ) : (
             <div className="text-2xl mb-3 text-center">👤</div>
@@ -169,14 +199,31 @@ export default function SellerLayout({ children }: SellerLayoutProps) {
       <div className="flex-1 flex flex-col overflow-hidden" >
         {/* Top Bar */}
         <header className="bg-white shadow-sm border-b border-gray-200">
+          {/* Super Admin Impersonation Banner */}
+          {isImpersonating && (
+            <div className="bg-yellow-500 text-black px-6 py-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🔐</span>
+                <span className="font-semibold">Super Admin Mode</span>
+                <span className="text-sm">- You are viewing as {user?.company?.name}</span>
+              </div>
+              <button
+                onClick={handleReturnToSuperAdmin}
+                className="px-4 py-1 bg-black text-white rounded-lg hover:bg-gray-800 text-sm font-medium"
+              >
+                ← Return to Super Admin
+              </button>
+            </div>
+          )}
+          
           <div className="px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">
-                  {navigation.find(item => item.current)?.name || 'Seller Portal'}
+                  {navigationItems.find(item => isCurrentRoute(item.href))?.name || 'Seller Portal'}
                 </h2>
                 <p className="text-sm text-gray-600">
-                  {user.company.name} - {user.company.business_name}
+                  {user?.company?.name} - {user?.company?.business_name}
                 </p>
               </div>
               <div className="flex items-center gap-4">
@@ -184,8 +231,8 @@ export default function SellerLayout({ children }: SellerLayoutProps) {
                 <SubscriptionHeaderBadge />
                 
                 <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                  <p className="text-xs text-gray-600">{user.role}</p>
+                  <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                  <p className="text-xs text-gray-600">{user?.role}</p>
                 </div>
               </div>
             </div>

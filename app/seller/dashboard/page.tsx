@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import SellerLayout from '../components/SellerLayout';
+import { useQuery } from '@tanstack/react-query';
 import SubscriptionInfo from '@/app/components/SubscriptionInfo';
 
 interface Stats {
@@ -26,14 +26,6 @@ interface Activity {
 export default function SellerDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
-  const [stats, setStats] = useState<Stats>({
-    totalProducts: 0,
-    lowStockProducts: 0,
-    totalCustomers: 0,
-    pendingInvoices: 0,
-  });
-  const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const session = localStorage.getItem('seller_session');
@@ -41,137 +33,121 @@ export default function SellerDashboard() {
       router.push('/seller/login');
       return;
     }
-
-    const userData = JSON.parse(session);
-    setUser(userData);
-    loadStats(userData.company_id);
-    loadRecentActivity(userData.company_id);
+    setUser(JSON.parse(session));
   }, [router]);
 
-  const loadStats = async (companyId: string) => {
-    try {
-      const response = await fetch(`/api/seller/stats?company_id=${companyId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data);
-      }
-    } catch (error) {
-      console.error('Error loading stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const companyId = user?.company_id;
 
-  const loadRecentActivity = async (companyId: string) => {
-    try {
-      // Fetch recent invoices
-      const invoicesResponse = await fetch(`/api/seller/invoices?company_id=${companyId}`);
-      let invoices = [];
-      if (invoicesResponse.ok) {
-        const invoicesData = await invoicesResponse.json();
-        invoices = Array.isArray(invoicesData) ? invoicesData : [];
-        console.log('📄 Invoices loaded:', invoices.length, invoicesData);
-      } else {
-        console.error('❌ Invoices API error:', invoicesResponse.status, await invoicesResponse.text());
-      }
+  // Fetch stats with React Query
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['stats', companyId],
+    queryFn: async () => {
+      const res = await fetch(`/api/seller/stats?company_id=${companyId}`);
+      if (!res.ok) throw new Error('Failed to fetch stats');
+      return res.json() as Promise<Stats>;
+    },
+    enabled: !!companyId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
 
-      // Fetch recent products
-      const productsResponse = await fetch(`/api/seller/products?company_id=${companyId}`);
-      let products = [];
-      if (productsResponse.ok) {
-        const productsData = await productsResponse.json();
-        products = Array.isArray(productsData) ? productsData : [];
-        console.log('📦 Products loaded:', products.length, productsData);
-      } else {
-        console.error('❌ Products API error:', productsResponse.status, await productsResponse.text());
-      }
+  // Fetch invoices with React Query
+  const { data: invoicesData } = useQuery({
+    queryKey: ['invoices', companyId],
+    queryFn: async () => {
+      const res = await fetch(`/api/seller/invoices?company_id=${companyId}`);
+      if (!res.ok) throw new Error('Failed to fetch invoices');
+      const data = await res.json();
+      return Array.isArray(data.invoices) ? data.invoices : [];
+    },
+    enabled: !!companyId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
 
-      // Fetch recent customers
-      const customersResponse = await fetch(`/api/seller/customers?company_id=${companyId}`);
-      let customers = [];
-      if (customersResponse.ok) {
-        const customersData = await customersResponse.json();
-        customers = Array.isArray(customersData) ? customersData : [];
-        console.log('👤 Customers loaded:', customers.length, customersData);
-      } else {
-        console.error('❌ Customers API error:', customersResponse.status, await customersResponse.text());
-      }
+  // Fetch products with React Query
+  const { data: productsData } = useQuery({
+    queryKey: ['products', companyId],
+    queryFn: async () => {
+      const res = await fetch(`/api/seller/products?company_id=${companyId}`);
+      if (!res.ok) throw new Error('Failed to fetch products');
+      const data = await res.json();
+      return Array.isArray(data.products) ? data.products : [];
+    },
+    enabled: !!companyId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-      // Build activity list
-      const activities: Activity[] = [];
+  // Fetch customers with React Query
+  const { data: customersData } = useQuery({
+    queryKey: ['customers', companyId],
+    queryFn: async () => {
+      const res = await fetch(`/api/seller/customers?company_id=${companyId}`);
+      if (!res.ok) throw new Error('Failed to fetch customers');
+      const data = await res.json();
+      return Array.isArray(data.customers) ? data.customers : [];
+    },
+    enabled: !!companyId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-      console.log('🔍 Building activities from:', {
-        invoicesCount: invoices.length,
-        productsCount: products.length,
-        customersCount: customers.length
-      });
+  // Build recent activity from fetched data
+  const recentActivity = useMemo(() => {
+    const activities: Activity[] = [];
+    const invoices = invoicesData || [];
+    const products = productsData || [];
+    const customers = customersData || [];
 
-      // Add recent invoices (last 5)
-      if (invoices && invoices.length > 0) {
-        invoices.slice(0, 5).forEach((invoice: any) => {
-          if (invoice && invoice.id && invoice.created_at) {
-            activities.push({
-              id: invoice.id,
-              type: 'invoice',
-              title: `Invoice ${invoice.invoice_number || 'N/A'}`,
-              description: `${invoice.buyer_name || 'Unknown'} - PKR ${parseFloat(invoice.total_amount || 0).toLocaleString()}`,
-              timestamp: invoice.created_at,
-              icon: '📄',
-              link: `/seller/invoices/${invoice.id}`
-            });
-          }
+    // Add recent invoices (last 5)
+    invoices.slice(0, 5).forEach((invoice: any) => {
+      if (invoice?.id && invoice?.created_at) {
+        activities.push({
+          id: invoice.id,
+          type: 'invoice',
+          title: `Invoice ${invoice.invoice_number || 'N/A'}`,
+          description: `${invoice.buyer_name || 'Unknown'} - PKR ${parseFloat(invoice.total_amount || 0).toLocaleString()}`,
+          timestamp: invoice.created_at,
+          icon: '📄',
+          link: `/seller/invoices/${invoice.id}`
         });
       }
+    });
 
-      // Add recent products (last 3)
-      if (products && products.length > 0) {
-        products.slice(0, 3).forEach((product: any) => {
-          if (product && product.id && product.created_at) {
-            activities.push({
-              id: product.id,
-              type: 'product',
-              title: `Product: ${product.name || 'Unknown'}`,
-              description: `Stock: ${product.stock_quantity || 0} ${product.uom || 'units'}`,
-              timestamp: product.created_at,
-              icon: '📦',
-              link: `/seller/products`
-            });
-          }
+    // Add recent products (last 3)
+    products.slice(0, 3).forEach((product: any) => {
+      if (product?.id && product?.created_at) {
+        activities.push({
+          id: product.id,
+          type: 'product',
+          title: `Product: ${product.name || 'Unknown'}`,
+          description: `Stock: ${product.current_stock || 0} ${product.uom || 'units'}`,
+          timestamp: product.created_at,
+          icon: '📦',
+          link: `/seller/products`
         });
       }
+    });
 
-      // Add recent customers (last 2)
-      if (customers && customers.length > 0) {
-        customers.slice(0, 2).forEach((customer: any) => {
-          if (customer && customer.id && customer.created_at) {
-            activities.push({
-              id: customer.id,
-              type: 'customer',
-              title: `Customer: ${customer.name || 'Unknown'}`,
-              description: customer.business_name || customer.email || 'New customer added',
-              timestamp: customer.created_at,
-              icon: '👤',
-              link: `/seller/customers/${customer.id}`
-            });
-          }
+    // Add recent customers (last 2)
+    customers.slice(0, 2).forEach((customer: any) => {
+      if (customer?.id && customer?.created_at) {
+        activities.push({
+          id: customer.id,
+          type: 'customer',
+          title: `Customer: ${customer.name || 'Unknown'}`,
+          description: customer.business_name || 'New customer added',
+          timestamp: customer.created_at,
+          icon: '👤',
+          link: `/seller/customers/${customer.id}`
         });
       }
+    });
 
-      // Sort by timestamp (most recent first)
-      activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    // Sort by timestamp and take top 10
+    return activities
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 10);
+  }, [invoicesData, productsData, customersData]);
 
-      // Take only the 10 most recent
-      const finalActivities = activities.slice(0, 10);
-      console.log('✅ Total activities:', finalActivities.length);
-      console.log('Activities:', finalActivities);
-
-      setRecentActivity(finalActivities);
-    } catch (error) {
-      console.error('Error loading recent activity:', error);
-    }
-  };
-
-  if (loading) {
+  if (statsLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-600">Loading...</div>
@@ -179,13 +155,8 @@ export default function SellerDashboard() {
     );
   }
 
-  if (!user) {
-    return null;
-  }
-
   return (
-    <SellerLayout>
-      <div className="p-6">
+    <div className="p-6">
         {/* Welcome Message */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Welcome back, {user.name}!</h2>
@@ -201,7 +172,7 @@ export default function SellerDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Products</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.totalProducts}</p>
+                <p className="text-3xl font-bold text-gray-900">{stats?.totalProducts || 0}</p>
               </div>
               <div className="text-4xl">📦</div>
             </div>
@@ -211,7 +182,7 @@ export default function SellerDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Low Stock Items</p>
-                <p className="text-3xl font-bold text-orange-600">{stats.lowStockProducts}</p>
+                <p className="text-3xl font-bold text-orange-600">{stats?.lowStockProducts || 0}</p>
               </div>
               <div className="text-4xl">⚠️</div>
             </div>
@@ -221,7 +192,7 @@ export default function SellerDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Customers</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.totalCustomers}</p>
+                <p className="text-3xl font-bold text-gray-900">{stats?.totalCustomers || 0}</p>
               </div>
               <div className="text-4xl">👥</div>
             </div>
@@ -231,7 +202,7 @@ export default function SellerDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Pending Invoices</p>
-                <p className="text-3xl font-bold text-blue-600">{stats.pendingInvoices}</p>
+                <p className="text-3xl font-bold text-blue-600">{stats?.pendingInvoices || 0}</p>
               </div>
               <div className="text-4xl">📄</div>
             </div>
@@ -323,7 +294,6 @@ export default function SellerDashboard() {
           )}
         </div>
       </div>
-    </SellerLayout>
   );
 }
 

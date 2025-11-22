@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase-server';
+
+const supabase = getSupabaseServer();
 
 // POST - Fix missing subscriptions for all companies
 export async function POST(request: NextRequest) {

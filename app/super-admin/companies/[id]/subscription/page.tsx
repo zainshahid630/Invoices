@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -29,15 +29,11 @@ export default function SubscriptionManagement() {
     payment_status: 'pending',
   });
 
-  useEffect(() => {
-    loadSubscription();
-  }, [params.id]);
-
-  const loadSubscription = async () => {
+  const loadSubscription = useCallback(async () => {
     try {
       const response = await fetch(`/api/super-admin/companies/${params.id}/subscription`);
       const data = await response.json();
-      
+
       if (data.success && data.subscription) {
         setSubscription(data.subscription);
         setFormData(data.subscription);
@@ -47,7 +43,11 @@ export default function SubscriptionManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    loadSubscription();
+  }, [loadSubscription]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
@@ -58,12 +58,12 @@ export default function SubscriptionManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const url = subscription
         ? `/api/super-admin/companies/${params.id}/subscription/${subscription.id}`
         : `/api/super-admin/companies/${params.id}/subscription`;
-      
+
       const method = subscription ? 'PATCH' : 'POST';
 
       const response = await fetch(url, {
@@ -249,13 +249,12 @@ export default function SubscriptionManagement() {
                   <div className="text-sm font-medium text-gray-500">Status</div>
                   <div className="mt-1">
                     <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        subscription.status === 'active'
-                          ? 'bg-green-100 text-green-800'
-                          : subscription.status === 'expired'
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${subscription.status === 'active'
+                        ? 'bg-green-100 text-green-800'
+                        : subscription.status === 'expired'
                           ? 'bg-yellow-100 text-yellow-800'
                           : 'bg-red-100 text-red-800'
-                      }`}
+                        }`}
                     >
                       {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
                     </span>
@@ -265,13 +264,12 @@ export default function SubscriptionManagement() {
                   <div className="text-sm font-medium text-gray-500">Payment Status</div>
                   <div className="mt-1">
                     <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        subscription.payment_status === 'paid'
-                          ? 'bg-green-100 text-green-800'
-                          : subscription.payment_status === 'pending'
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${subscription.payment_status === 'paid'
+                        ? 'bg-green-100 text-green-800'
+                        : subscription.payment_status === 'pending'
                           ? 'bg-yellow-100 text-yellow-800'
                           : 'bg-red-100 text-red-800'
-                      }`}
+                        }`}
                     >
                       {subscription.payment_status.charAt(0).toUpperCase() + subscription.payment_status.slice(1)}
                     </span>

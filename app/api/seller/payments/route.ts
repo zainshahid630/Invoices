@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServer } from '@/lib/supabase-server';
 import { checkSubscription } from '@/lib/subscription-check';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = getSupabaseServer();
 
 // GET - List all payments
 export async function GET(request: NextRequest) {
@@ -90,6 +87,8 @@ export async function POST(request: NextRequest) {
         reference_number: reference_number || null,
         notes: notes || null,
         created_by: created_by || null,
+        payment_gateway: body.payment_gateway || null,
+        payment_status: body.payment_status || 'completed',
       })
       .select()
       .single();

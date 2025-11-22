@@ -87,6 +87,44 @@ export default function DeletedInvoicesPage() {
     }
   };
 
+  const handlePermanentDelete = async (invoiceId: string, invoiceNumber: string) => {
+    if (!confirm(`⚠️ PERMANENT DELETE WARNING ⚠️\n\nAre you sure you want to PERMANENTLY delete invoice ${invoiceNumber}?\n\nThis action:\n• Cannot be undone\n• Will free up the invoice number for reuse\n• Will permanently remove all invoice data\n\nType "DELETE" to confirm.`)) {
+      return;
+    }
+
+    const confirmText = prompt(`Type "DELETE" to permanently delete invoice ${invoiceNumber}:`);
+    if (confirmText !== 'DELETE') {
+      alert('Deletion cancelled. You must type "DELETE" exactly to confirm.');
+      return;
+    }
+
+    try {
+      const session = localStorage.getItem('seller_session');
+      if (!session) return;
+
+      const userData = JSON.parse(session);
+      const response = await fetch('/api/seller/invoices/permanent-delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company_id: userData.company_id,
+          invoice_id: invoiceId,
+        }),
+      });
+
+      if (response.ok) {
+        alert(`Invoice ${invoiceNumber} has been permanently deleted. The invoice number is now available for reuse.`);
+        loadDeletedInvoices(); // Reload the list
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Error permanently deleting invoice:', error);
+      alert('Failed to permanently delete invoice');
+    }
+  };
+
   const filteredInvoices = invoices.filter((invoice) => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -225,12 +263,21 @@ export default function DeletedInvoicesPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => handleRestore(invoice.id, invoice.invoice_number)}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
-                      >
-                        ♻️ Restore
-                      </button>
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={() => handleRestore(invoice.id, invoice.invoice_number)}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+                        >
+                          ♻️ Restore
+                        </button>
+                        <button
+                          onClick={() => handlePermanentDelete(invoice.id, invoice.invoice_number)}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold"
+                          title="Permanently delete this invoice and free up the invoice number"
+                        >
+                          🗑️ Delete Forever
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

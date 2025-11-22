@@ -96,11 +96,11 @@ const ROW_LAYOUTS = [
 export default function TemplateBuilderPro() {
   const [templateElements, setTemplateElements] = useState<TemplateElement[]>([
     { ...AVAILABLE_ELEMENTS[0], id: 'header-1' },
-    { 
-      id: 'row-1', 
-      type: 'row', 
-      label: '2 Column Row', 
-      icon: '⬜⬜', 
+    {
+      id: 'row-1',
+      type: 'row',
+      label: '2 Column Row',
+      icon: '⬜⬜',
       columns: 2,
       children: [
         { ...AVAILABLE_ELEMENTS[2], id: 'company-1', width: 'half' },
@@ -149,7 +149,7 @@ export default function TemplateBuilderPro() {
       if (el.id === rowId && el.type === 'row') {
         const row = el as TemplateElement;
         if (!row.children) row.children = [];
-        
+
         // Check if row is full
         if (row.children.length >= (row.columns || 2)) {
           alert(`This row is full! It can only hold ${row.columns} elements.`);
@@ -163,7 +163,7 @@ export default function TemplateBuilderPro() {
           width,
           fields: getDefaultFields(element.type),
         };
-        
+
         return {
           ...row,
           children: [...row.children, newElement],
@@ -198,14 +198,14 @@ export default function TemplateBuilderPro() {
       if (el.type === 'row' && el.children) {
         return {
           ...el,
-          children: el.children.map(child => 
+          children: el.children.map(child =>
             child.id === elementId ? { ...child, fields } : child
           ),
         };
       }
       return el;
     }));
-    
+
     if (selectedElement?.id === elementId) {
       setSelectedElement({ ...selectedElement, fields });
     }
@@ -233,11 +233,11 @@ export default function TemplateBuilderPro() {
   const handleDrop = (e: DragEvent, dropIndex: number) => {
     e.preventDefault();
     if (draggedIndex === null) return;
-    
+
     const newElements = [...templateElements];
     const [draggedElement] = newElements.splice(draggedIndex, 1);
     newElements.splice(dropIndex, 0, draggedElement);
-    
+
     setTemplateElements(newElements);
     setDraggedIndex(null);
   };
@@ -309,7 +309,7 @@ export default function TemplateBuilderPro() {
 
           <div className="mt-6 pt-6 border-t border-gray-200">
             <h3 className="text-sm font-bold text-gray-900 mb-3">⚙️ Settings</h3>
-            
+
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-semibold text-gray-600 block mb-1">Template Name</label>
@@ -414,27 +414,27 @@ export default function TemplateBuilderPro() {
           ) : (
             <>
               <h2 className="text-lg font-bold text-gray-900 mb-4">👁️ Live Preview</h2>
-          
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <div className="bg-white rounded shadow-sm p-4 text-xs" style={{ fontSize: templateSettings.fontSize === 'small' ? '10px' : templateSettings.fontSize === 'large' ? '14px' : '12px' }}>
-              {templateElements.map((element) => (
-                element.type === 'row' ? (
-                  <PreviewRow key={element.id} row={element} settings={templateSettings} />
-                ) : (
-                  <PreviewElement key={element.id} element={element} settings={templateSettings} />
-                )
-              ))}
-            </div>
-          </div>
 
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs text-blue-800 mb-2">
-              <strong>💡 Live Preview:</strong> This shows exactly how your invoice will look with your field settings.
-            </p>
-            <p className="text-xs text-blue-700">
-              Click any element on the canvas to configure which fields to show/hide.
-            </p>
-          </div>
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <div className="bg-white rounded shadow-sm p-4 text-xs" style={{ fontSize: templateSettings.fontSize === 'small' ? '10px' : templateSettings.fontSize === 'large' ? '14px' : '12px' }}>
+                  {templateElements.map((element) => (
+                    element.type === 'row' ? (
+                      <PreviewRow key={element.id} row={element} settings={templateSettings} />
+                    ) : (
+                      <PreviewElement key={element.id} element={element} settings={templateSettings} />
+                    )
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-blue-800 mb-2">
+                  <strong>💡 Live Preview:</strong> This shows exactly how your invoice will look with your field settings.
+                </p>
+                <p className="text-xs text-blue-700">
+                  Click any element on the canvas to configure which fields to show/hide.
+                </p>
+              </div>
             </>
           )}
         </div>
@@ -519,11 +519,10 @@ function FieldConfigurator({ element, onUpdate, onClose }: any) {
         {fields.map((field: any) => (
           <label
             key={field.key}
-            className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-              currentFields[field.key]
+            className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${currentFields[field.key]
                 ? 'bg-blue-50 border-blue-300'
                 : 'bg-gray-50 border-gray-200'
-            }`}
+              }`}
           >
             <input
               type="checkbox"
@@ -544,7 +543,7 @@ function FieldConfigurator({ element, onUpdate, onClose }: any) {
 
       <div className="mt-4 p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
         <p className="text-xs text-yellow-800">
-          <strong>💡 Tip:</strong> Uncheck fields you don't want to show. For Items Table, uncheck "HS Code" to hide it from the table, then add it separately above.
+          <strong>💡 Tip:</strong> Uncheck fields you don&apos;t want to show. For Items Table, uncheck &quot;HS Code&quot; to hide it from the table, then add it separately above.
         </p>
       </div>
     </div>
@@ -559,9 +558,8 @@ function RowCard({ row, index, isSelected, onSelect, onRemove, onSelectChild, on
       onDragOver={onDragOver}
       onDrop={onDrop}
       onClick={onSelect}
-      className={`p-4 border-2 rounded-lg cursor-move transition-all ${
-        isSelected ? 'border-purple-500 bg-purple-50' : 'border-purple-200 bg-purple-50/50 hover:border-purple-300'
-      }`}
+      className={`p-4 border-2 rounded-lg cursor-move transition-all ${isSelected ? 'border-purple-500 bg-purple-50' : 'border-purple-200 bg-purple-50/50 hover:border-purple-300'
+        }`}
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
@@ -629,9 +627,8 @@ function TemplateElementCard({ element, index, isSelected, onSelect, onRemove, o
       onDragOver={onDragOver}
       onDrop={onDrop}
       onClick={onSelect}
-      className={`p-4 border-2 rounded-lg cursor-move transition-all ${
-        isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-300'
-      }`}
+      className={`p-4 border-2 rounded-lg cursor-move transition-all ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-300'
+        }`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -679,7 +676,7 @@ function PreviewRow({ row, settings }: any) {
 
 function PreviewElement({ element, settings }: any) {
   const fields = element.fields || {};
-  
+
   const getColorClass = () => {
     switch (settings.colorScheme) {
       case 'blue': return 'bg-blue-600 text-white';
@@ -698,7 +695,7 @@ function PreviewElement({ element, settings }: any) {
           {fields.invoiceNumber !== false && <div className="text-xs opacity-75">INV-2025-00001</div>}
         </div>
       );
-    
+
     case 'logo':
       return (
         <div className="text-center mb-2">
@@ -707,7 +704,7 @@ function PreviewElement({ element, settings }: any) {
           </div>
         </div>
       );
-    
+
     case 'company-info':
       return (
         <div className="border border-gray-300 p-2 rounded mb-2">
@@ -720,7 +717,7 @@ function PreviewElement({ element, settings }: any) {
           {fields.email !== false && <div className="text-xs text-gray-600">Email: info@company.com</div>}
         </div>
       );
-    
+
     case 'buyer-info':
       return (
         <div className="border border-gray-300 p-2 rounded mb-2">
@@ -731,7 +728,7 @@ function PreviewElement({ element, settings }: any) {
           {fields.province !== false && <div className="text-xs text-gray-600">Province: Punjab</div>}
         </div>
       );
-    
+
     case 'invoice-details':
       return (
         <div className="bg-gray-100 p-2 rounded mb-2">
@@ -742,7 +739,7 @@ function PreviewElement({ element, settings }: any) {
           {fields.paymentStatus !== false && <div className="text-xs"><strong>Status:</strong> Paid</div>}
         </div>
       );
-    
+
     case 'items-table':
       return (
         <table className="w-full border border-gray-300 mb-2 text-xs">
@@ -776,7 +773,7 @@ function PreviewElement({ element, settings }: any) {
           </tbody>
         </table>
       );
-    
+
     case 'totals':
       return (
         <div className="border-t-2 border-gray-300 pt-2 mb-2">
@@ -806,7 +803,7 @@ function PreviewElement({ element, settings }: any) {
           )}
         </div>
       );
-    
+
     case 'qr-code':
       return (
         <div className="text-center mb-2">
@@ -814,7 +811,7 @@ function PreviewElement({ element, settings }: any) {
           <div className="text-xs text-gray-600 mt-1">QR</div>
         </div>
       );
-    
+
     case 'notes':
       return (
         <div className="bg-gray-50 border border-gray-300 p-2 rounded mb-2">
@@ -822,17 +819,17 @@ function PreviewElement({ element, settings }: any) {
           <div className="text-xs text-gray-600">Terms...</div>
         </div>
       );
-    
+
     case 'footer':
       return (
         <div className={`${getColorClass()} p-2 rounded text-center mb-2`}>
           <div className="text-xs">Thank you!</div>
         </div>
       );
-    
+
     case 'spacer':
       return <div className="h-3 mb-2"></div>;
-    
+
     default:
       return null;
   }

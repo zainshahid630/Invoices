@@ -10,7 +10,7 @@ export default function SetupExcelTemplate() {
   const addExcelTemplate = async () => {
     setLoading(true);
     setMessage('');
-    
+
     try {
       const response = await fetch('/api/super-admin/templates/add-excel', {
         method: 'POST',
@@ -68,13 +68,12 @@ export default function SetupExcelTemplate() {
           <button
             onClick={addExcelTemplate}
             disabled={loading || success}
-            className={`px-8 py-4 rounded-lg font-bold text-lg transition-all transform hover:scale-105 ${
-              success
+            className={`px-8 py-4 rounded-lg font-bold text-lg transition-all transform hover:scale-105 ${success
                 ? 'bg-green-500 text-white cursor-default'
                 : loading
-                ? 'bg-gray-400 text-white cursor-wait'
-                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
-            }`}
+                  ? 'bg-gray-400 text-white cursor-wait'
+                  : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
+              }`}
           >
             {loading ? (
               <>
@@ -97,11 +96,10 @@ export default function SetupExcelTemplate() {
 
         {message && (
           <div
-            className={`p-4 rounded-lg text-center font-semibold ${
-              success
+            className={`p-4 rounded-lg text-center font-semibold ${success
                 ? 'bg-green-100 text-green-800 border-2 border-green-300'
                 : 'bg-red-100 text-red-800 border-2 border-red-300'
-            }`}
+              }`}
           >
             {message}
           </div>
@@ -113,7 +111,7 @@ export default function SetupExcelTemplate() {
             <ol className="text-sm text-yellow-800 space-y-2 list-decimal list-inside">
               <li>Go to <strong>Settings → Templates</strong> tab</li>
               <li>Find the <strong>Excel Template</strong> card</li>
-              <li>Click <strong>"Use This Template"</strong> button</li>
+              <li>Click <strong>&quot;Use This Template&quot;</strong> button</li>
               <li>Test it by printing any invoice!</li>
             </ol>
             <div className="mt-4 text-center">

@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { supabase } from './supabase';
+import { getSupabaseServer } from './supabase-server';
 
 export interface LoginCredentials {
   email: string;
@@ -21,6 +21,9 @@ export interface AuthResponse {
 // Super Admin Login
 export async function loginSuperAdmin(credentials: LoginCredentials): Promise<AuthResponse> {
   try {
+    // Use service role client to bypass RLS during login lookup
+    const supabase = getSupabaseServer();
+
     const { data, error } = await supabase
       .from('super_admins')
       .select('*')
@@ -55,6 +58,9 @@ export async function loginSuperAdmin(credentials: LoginCredentials): Promise<Au
 // Seller Login
 export async function loginSeller(credentials: LoginCredentials): Promise<AuthResponse> {
   try {
+    // Use service role client to bypass RLS during login lookup
+    const supabase = getSupabaseServer();
+
     const { data, error } = await supabase
       .from('users')
       .select('*, companies!inner(*)')

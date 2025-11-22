@@ -1,40 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServer } from '@/lib/supabase-server';
+import { normalizeNTN } from '@/lib/ntn-utils';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-// Helper function to normalize NTN number
-function normalizeNTN(ntn: string): { normalized: string; isValid: boolean; error?: string } {
-  if (!ntn) {
-    return { normalized: '', isValid: false, error: 'NTN is empty' };
-  }
-  
-  // Remove all hyphens
-  const cleaned = ntn.replace(/-/g, '');
-  
-  // Check if it has at least 7 digits
-  if (cleaned.length < 7) {
-    return { 
-      normalized: cleaned, 
-      isValid: false, 
-      error: `NTN must have at least 7 digits. Found: ${cleaned.length} digits` 
-    };
-  }
-  
-  return { normalized: cleaned, isValid: true };
-}
+const supabase = getSupabaseServer();
 
 // Helper function to sanitize description for JSON
-function sanitizeDescription(description: string): string {
-  if (!description) return '';
-  
-  // Replace double quotes with single quotes to prevent JSON issues
-  // This is especially important for measurements like 10" (inches)
-  return description.replace(/"/g, "'");
+function sanitizeDescription(input: string): string {
+  if (!input) return "";
+
+  return input
+    .replace(/\\/g, "")          // remove backslashes
+    .replace(/"/g, "″")          // replace inch " with unicode inch sign
+    .replace(/\s+/g, " ")        // normalize spacing
+    .trim();
 }
+
 
 // POST - Post invoice to FBR and save response
 export async function POST(
@@ -94,18 +74,18 @@ export async function POST(
     // Normalize and validate NTN numbers
     const sellerNTN = normalizeNTN(company.ntn_number || '');
     if (!sellerNTN.isValid) {
-      return NextResponse.json({ 
-        error: `Invalid Seller NTN: ${sellerNTN.error}. Please update in Settings.` 
+      return NextResponse.json({
+        error: `Invalid Seller NTN: ${sellerNTN.error}. Please update in Settings.`
       }, { status: 400 });
     }
-    
+
     const buyerNTN = normalizeNTN(invoice.buyer_ntn_cnic || '');
     if (!buyerNTN.isValid) {
-      return NextResponse.json({ 
-        error: `Invalid Buyer NTN: ${buyerNTN.error}. Please update the invoice.` 
+      return NextResponse.json({
+        error: `Invalid Buyer NTN: ${buyerNTN.error}. Please update the invoice.`
       }, { status: 400 });
     }
-    
+
     const fbrPayload = {
       invoiceType: invoice.invoice_type || 'Sale Invoice',
       invoiceDate: invoice.invoice_date,
@@ -115,7 +95,7 @@ export async function POST(
       sellerAddress: company.address || '',
       buyerNTNCNIC: buyerNTN.normalized,
       buyerBusinessName: invoice.buyer_business_name || invoice.buyer_name || '',
-      buyerProvince: invoice.buyer_province || 'Sindh',
+      buyerProvince: invoice.buyer_province || '',
       buyerAddress: invoice.buyer_address || '',
       buyerRegistrationType: invoice.buyer_registration_type || 'Unregistered',
       invoiceRefNo: invoice.invoice_number || '',
@@ -168,36 +148,62 @@ export async function POST(
       fbrInvoiceNumber = fbrData.validationResponse.invoiceStatuses[0].invoiceNo;
     }
 
-    // Save FBR response to invoice
-    const { error: updateError } = await supabase
-      .from('invoices')
-      .update({
-        status: 'fbr_posted',
-        fbr_posted_at: new Date().toISOString(),
-        fbr_invoice_number: fbrInvoiceNumber,
-        fbr_response: fbrData,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', params.id)
-      .eq('company_id', company_id);
+    // Only update status to fbr_posted if we got an invoice number
+    // Otherwise keep it as draft
+    if (fbrInvoiceNumber) {
+      // Save FBR response to invoice and update status
+      const { error: updateError } = await supabase
+        .from('invoices')
+        .update({
+          status: 'fbr_posted',
+          fbr_posted_at: new Date().toISOString(),
+          fbr_invoice_number: fbrInvoiceNumber,
+          fbr_response: fbrData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', params.id)
+        .eq('company_id', company_id);
 
-    if (updateError) {
-      console.error('Error updating invoice with FBR response:', updateError);
+      if (updateError) {
+        console.error('Error updating invoice with FBR response:', updateError);
+        return NextResponse.json({
+          success: false,
+          error: 'Failed to save FBR response to invoice',
+          fbrResponse: fbrData
+        }, { status: 500 });
+      }
+
+      // Return success response
+      return NextResponse.json({
+        success: true,
+        message: 'Invoice posted to FBR successfully',
+        fbrResponse: fbrData,
+        fbrInvoiceNumber: fbrInvoiceNumber,
+        payload: fbrPayload
+      });
+    } else {
+      // FBR didn't return an invoice number - posting failed
+      // Save the response but keep status as draft
+      const { error: updateError } = await supabase
+        .from('invoices')
+        .update({
+          fbr_response: fbrData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', params.id)
+        .eq('company_id', company_id);
+
+      if (updateError) {
+        console.error('Error saving FBR response:', updateError);
+      }
+
       return NextResponse.json({
         success: false,
-        error: 'Failed to save FBR response to invoice',
-        fbrResponse: fbrData
-      }, { status: 500 });
+        error: 'FBR did not return an invoice number. Please check the validation errors.',
+        fbrResponse: fbrData,
+        payload: fbrPayload
+      }, { status: 400 });
     }
-
-    // Return success response
-    return NextResponse.json({
-      success: true,
-      message: 'Invoice posted to FBR successfully',
-      fbrResponse: fbrData,
-      fbrInvoiceNumber: fbrInvoiceNumber,
-      payload: fbrPayload
-    });
 
   } catch (error: any) {
     console.error('Error posting invoice to FBR:', error);

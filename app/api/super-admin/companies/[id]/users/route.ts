@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase-server';
 import { hashPassword } from '@/lib/auth';
+
+const supabase = getSupabaseServer();
 
 // GET - List all users for a company
 export async function GET(

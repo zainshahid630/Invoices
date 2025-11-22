@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServer } from '@/lib/supabase-server';
 import { checkSubscription } from '@/lib/subscription-check';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = getSupabaseServer();
 
-// Generate invoice number using settings: PREFIX + COUNTER
+// OPTIMIZED: Generate invoice number using settings: PREFIX + COUNTER
+// This function finds the next available invoice number in ONE database query
 async function generateInvoiceNumber(companyId: string): Promise<string> {
   // Get company settings
   const { data: settings } = await supabase
@@ -17,19 +15,55 @@ async function generateInvoiceNumber(companyId: string): Promise<string> {
     .single();
 
   const prefix = settings?.invoice_prefix || 'INV';
-  const currentCounter = settings?.invoice_counter || 1;
+  const counter = settings?.invoice_counter || 1;
 
-  // Generate invoice number: PREFIX + COUNTER (e.g., INV301, INV.301, etc.)
-  // No separator added - user controls format via prefix
-  const invoiceNumber = `${prefix}${currentCounter}`;
+  // Get all used invoice numbers in ONE query (instead of 100+ queries)
+  const { data: usedInvoices } = await supabase
+    .from('invoices')
+    .select('invoice_number')
+    .eq('company_id', companyId)
+    .like('invoice_number', `${prefix}%`)
+    .is('deleted_at', null);
 
-  // Increment counter in settings for next invoice
-  await supabase
+  // Extract numeric parts and create a Set for O(1) lookup
+  const usedNumbers = new Set(
+    (usedInvoices || [])
+      .map(inv => {
+        const numPart = inv.invoice_number.replace(prefix, '');
+        return parseInt(numPart) || 0;
+      })
+      .filter(num => num > 0)
+  );
+
+  // Find first available number starting from counter
+  let nextNum = counter;
+  while (usedNumbers.has(nextNum) && nextNum < counter + 1000) {
+    nextNum++;
+  }
+
+  return `${prefix}${nextNum}`;
+}
+
+// Increment the invoice counter after successful invoice creation
+async function incrementInvoiceCounter(companyId: string, invoiceNumber: string): Promise<void> {
+  // Extract the numeric part from the invoice number
+  const { data: settings } = await supabase
     .from('settings')
-    .update({ invoice_counter: currentCounter + 1 })
-    .eq('company_id', companyId);
+    .select('invoice_prefix, invoice_counter')
+    .eq('company_id', companyId)
+    .single();
 
-  return invoiceNumber;
+  const prefix = settings?.invoice_prefix || 'INV';
+  const numericPart = invoiceNumber.replace(prefix, '');
+  const usedCounter = parseInt(numericPart) || settings?.invoice_counter || 1;
+
+  // Only increment if the used counter is >= current counter
+  if (usedCounter >= (settings?.invoice_counter || 1)) {
+    await supabase
+      .from('settings')
+      .update({ invoice_counter: usedCounter + 1 })
+      .eq('company_id', companyId);
+  }
 }
 
 // GET - List all invoices for a company with server-side pagination
@@ -41,6 +75,11 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || 'all';
+    const dateFrom = searchParams.get('date_from') || '';
+    const dateTo = searchParams.get('date_to') || '';
+    const buyer = searchParams.get('buyer') || '';
+    const invoiceNumberFrom = searchParams.get('invoice_number_from') || '';
+    const invoiceNumberTo = searchParams.get('invoice_number_to') || '';
 
     if (!company_id) {
       return NextResponse.json({ error: 'Company ID is required' }, { status: 400 });
@@ -69,6 +108,27 @@ export async function GET(request: NextRequest) {
       query = query.eq('status', status);
     }
 
+    // Apply date range filter
+    if (dateFrom) {
+      query = query.gte('invoice_date', dateFrom);
+    }
+    if (dateTo) {
+      query = query.lte('invoice_date', dateTo);
+    }
+
+    // Apply buyer filter
+    if (buyer) {
+      query = query.or(`buyer_name.ilike.%${buyer}%,buyer_business_name.ilike.%${buyer}%`);
+    }
+
+    // Apply invoice number range filter
+    if (invoiceNumberFrom) {
+      query = query.gte('invoice_number', invoiceNumberFrom);
+    }
+    if (invoiceNumberTo) {
+      query = query.lte('invoice_number', invoiceNumberTo);
+    }
+
     // Apply pagination and ordering
     query = query
       .order('created_at', { ascending: false })
@@ -81,22 +141,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Get stats for all invoices (not just current page)
-    const { data: allInvoices } = await supabase
-      .from('invoices')
-      .select('status, payment_status, total_amount')
-      .eq('company_id', company_id)
-      .is('deleted_at', null);
+    // OPTIMIZED: Get stats using database aggregation (single efficient query)
+    // This is much faster than fetching all invoices and calculating in JavaScript
+    const { data: statsData } = await supabase
+      .rpc('get_invoice_stats_optimized', { p_company_id: company_id });
 
-    const stats = {
-      total: allInvoices?.length || 0,
-      draft: allInvoices?.filter(i => i.status === 'draft').length || 0,
-      posted: allInvoices?.filter(i => i.status === 'fbr_posted').length || 0,
-      verified: allInvoices?.filter(i => i.status === 'verified').length || 0,
-      totalAmount: allInvoices?.reduce((sum, i) => sum + parseFloat(i.total_amount.toString()), 0) || 0,
-      pendingAmount: allInvoices?.filter(i => i.payment_status === 'pending' || i.payment_status === 'partial')
-        .reduce((sum, i) => sum + parseFloat(i.total_amount.toString()), 0) || 0,
-    };
+    // Fallback to manual calculation if RPC function doesn't exist yet
+    let stats;
+    if (statsData && statsData.length > 0) {
+      stats = statsData[0];
+    } else {
+      // Fallback: Use aggregation query instead of fetching all records
+      const { data: allInvoices } = await supabase
+        .from('invoices')
+        .select('status, payment_status, total_amount')
+        .eq('company_id', company_id)
+        .is('deleted_at', null);
+
+      stats = {
+        total: allInvoices?.length || 0,
+        draft: allInvoices?.filter(i => i.status === 'draft').length || 0,
+        posted: allInvoices?.filter(i => i.status === 'fbr_posted').length || 0,
+        verified: allInvoices?.filter(i => i.status === 'verified').length || 0,
+        totalAmount: allInvoices?.reduce((sum, i) => sum + parseFloat(i.total_amount.toString()), 0) || 0,
+        pendingAmount: allInvoices?.filter(i => i.payment_status === 'pending' || i.payment_status === 'partial')
+          .reduce((sum, i) => sum + parseFloat(i.total_amount.toString()), 0) || 0,
+      };
+    }
 
     return NextResponse.json({
       invoices: invoices || [],
@@ -141,9 +212,37 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validation
-    if (!company_id || !invoice_date || !invoice_type || !items || items.length === 0) {
+    if (!company_id) {
       return NextResponse.json(
-        { error: 'Company ID, invoice date, invoice type, and items are required' },
+        { error: 'Company ID is required' },
+        { status: 400 }
+      );
+    }
+    
+    if (!invoice_date) {
+      return NextResponse.json(
+        { error: 'Invoice date is required' },
+        { status: 400 }
+      );
+    }
+    
+    if (!invoice_type) {
+      return NextResponse.json(
+        { error: 'Invoice type is required' },
+        { status: 400 }
+      );
+    }
+    
+    if (!items || items.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one item is required' },
+        { status: 400 }
+      );
+    }
+    
+    if (!buyer_name || buyer_name.trim() === '') {
+      return NextResponse.json(
+        { error: 'Buyer name is required' },
         { status: 400 }
       );
     }
@@ -167,16 +266,17 @@ export async function POST(request: NextRequest) {
       invoice_number = await generateInvoiceNumber(company_id);
     }
 
-    // Check if invoice number already exists
+    // Check if invoice number already exists in THIS company
     const { data: existingInvoice } = await supabase
       .from('invoices')
       .select('id')
+      .eq('company_id', company_id)
       .eq('invoice_number', invoice_number)
       .single();
 
     if (existingInvoice) {
       return NextResponse.json(
-        { error: `Invoice number ${invoice_number} already exists. Please use a different number.` },
+        { error: `Invoice number ${invoice_number} already exists in your company. Please use a different number.` },
         { status: 409 }
       );
     }
@@ -208,7 +308,7 @@ export async function POST(request: NextRequest) {
             business_name: buyer_business_name || null,
             ntn_cnic: buyer_ntn_cnic || null,
             gst_number: buyer_gst_number || null,
-            address: buyer_address || null,
+            address: (buyer_address && buyer_address.trim() !== '') ? buyer_address : null,
             province: buyer_province || null,
             registration_type: buyer_registration_type || 'Unregistered',
             is_active: true,
@@ -216,7 +316,15 @@ export async function POST(request: NextRequest) {
           .select()
           .single();
         
-        if (!customerError && newCustomer) {
+        if (customerError) {
+          console.error('Error creating customer:', customerError);
+          return NextResponse.json(
+            { error: `Failed to create customer: ${customerError.message}` },
+            { status: 500 }
+          );
+        }
+        
+        if (newCustomer) {
           final_customer_id = newCustomer.id;
           console.log('Auto-saved customer:', newCustomer.id);
         }
@@ -252,7 +360,7 @@ export async function POST(request: NextRequest) {
         buyer_business_name,
         buyer_ntn_cnic,
         buyer_gst_number: buyer_gst_number || null,
-        buyer_address,
+        buyer_address: (buyer_address && buyer_address.trim() !== '') ? buyer_address : null,
         buyer_province,
         buyer_registration_type: buyer_registration_type || 'Unregistered',
         subtotal: subtotal.toFixed(2),
@@ -270,7 +378,25 @@ export async function POST(request: NextRequest) {
 
     if (invoiceError) {
       console.error('Error creating invoice:', invoiceError);
-      return NextResponse.json({ error: invoiceError.message }, { status: 500 });
+      
+      // Provide more specific error messages
+      let errorMessage = invoiceError.message;
+      if (invoiceError.code === '23502') {
+        // Not null violation
+        const match = invoiceError.message.match(/column "([^"]+)"/);
+        if (match) {
+          const columnName = match[1];
+          const fieldNames: Record<string, string> = {
+            'buyer_name': 'Buyer name',
+            'invoice_date': 'Invoice date',
+            'invoice_type': 'Invoice type',
+            'buyer_province': 'Buyer province',
+          };
+          errorMessage = `${fieldNames[columnName] || columnName} is required`;
+        }
+      }
+      
+      return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 
     // Create invoice items
@@ -328,6 +454,9 @@ export async function POST(request: NextRequest) {
         }
       }
     }
+
+    // Increment the invoice counter ONLY after successful invoice creation
+    await incrementInvoiceCounter(company_id, invoice_number);
 
     return NextResponse.json(invoice, { status: 201 });
   } catch (error: any) {

@@ -1,21 +1,33 @@
 module.exports = {
-  apps: [{
-    name: 'saas-invoices',
-    script: 'npm',
-    args: 'run start:prod',
-    cwd: '/Users/zain/Documents/augment-projects/Saas-Invoices',
-    instances: 1,
-    autorestart: true,
-    watch: false,
-    max_memory_restart: '1G',
-    env: {
-      NODE_ENV: 'production',
-      PORT: 3001
+  apps: [
+    {
+      name: 'invoicefbr',
+      script: 'node_modules/next/dist/bin/next',
+      args: 'start',
+      cwd: '/var/www/inovices',
+      instances: 'max', // Use all available CPU cores
+      exec_mode: 'cluster',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3001,
+      },
+      // Performance optimizations
+      max_memory_restart: '1G',
+      min_uptime: '10s',
+      max_restarts: 10,
+      autorestart: true,
+      watch: false,
+      
+      // Logging
+      error_file: '/var/www/inovices/logs/pm2-error.log',
+      out_file: '/var/www/inovices/logs/pm2-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      merge_logs: true,
+      
+      // Graceful shutdown
+      kill_timeout: 5000,
+      wait_ready: true,
+      listen_timeout: 10000,
     },
-    error_file: './logs/pm2-error.log',
-    out_file: './logs/pm2-out.log',
-    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-    merge_logs: true,
-  }]
+  ],
 };
-

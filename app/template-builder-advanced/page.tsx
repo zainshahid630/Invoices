@@ -132,7 +132,7 @@ export default function TemplateBuilderAdvanced() {
       if (el.id === rowId && el.type === 'row') {
         const row = el as TemplateElement;
         if (!row.children) row.children = [];
-        
+
         if (row.children.length >= (row.columns || 2)) {
           alert(`This row is full! It can only hold ${row.columns} elements.`);
           return el;
@@ -145,7 +145,7 @@ export default function TemplateBuilderAdvanced() {
           width,
           fields: getDefaultFields(element.type),
         };
-        
+
         return {
           ...row,
           children: [...row.children, newElement],
@@ -181,14 +181,14 @@ export default function TemplateBuilderAdvanced() {
       if (el.type === 'row' && el.children) {
         return {
           ...el,
-          children: el.children.map(child => 
+          children: el.children.map(child =>
             child.id === elementId ? { ...child, fields } : child
           ),
         };
       }
       return el;
     }));
-    
+
     if (selectedElement?.id === elementId) {
       setSelectedElement({ ...selectedElement, fields });
     }
@@ -205,11 +205,11 @@ export default function TemplateBuilderAdvanced() {
   const handleDrop = (e: DragEvent, dropIndex: number) => {
     e.preventDefault();
     if (draggedIndex === null) return;
-    
+
     const newElements = [...templateElements];
     const [draggedElement] = newElements.splice(draggedIndex, 1);
     newElements.splice(dropIndex, 0, draggedElement);
-    
+
     setTemplateElements(newElements);
     setDraggedIndex(null);
   };
@@ -434,11 +434,10 @@ function FieldConfigurator({ element, onUpdate, onClose }: any) {
         {fields.map((field) => (
           <label
             key={field.key}
-            className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-              currentFields[field.key]
+            className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${currentFields[field.key]
                 ? 'bg-blue-50 border-blue-300'
                 : 'bg-gray-50 border-gray-200'
-            }`}
+              }`}
           >
             <input
               type="checkbox"
@@ -459,7 +458,7 @@ function FieldConfigurator({ element, onUpdate, onClose }: any) {
 
       <div className="mt-6 p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
         <p className="text-xs text-yellow-800">
-          <strong>💡 Tip:</strong> Uncheck fields you don't want to show on the invoice. Changes apply immediately to the preview.
+          <strong>💡 Tip:</strong> Uncheck fields you don&apos;t want to show on the invoice. Changes apply immediately to the preview.
         </p>
       </div>
     </div>
@@ -474,9 +473,8 @@ function RowCard({ row, index, isSelected, onSelect, onRemove, onSelectChild, on
       onDragOver={onDragOver}
       onDrop={onDrop}
       onClick={onSelect}
-      className={`p-4 border-2 rounded-lg cursor-move transition-all ${
-        isSelected ? 'border-purple-500 bg-purple-50' : 'border-purple-200 bg-purple-50/50 hover:border-purple-300'
-      }`}
+      className={`p-4 border-2 rounded-lg cursor-move transition-all ${isSelected ? 'border-purple-500 bg-purple-50' : 'border-purple-200 bg-purple-50/50 hover:border-purple-300'
+        }`}
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
@@ -543,9 +541,8 @@ function TemplateElementCard({ element, index, isSelected, onSelect, onRemove, o
       onDragOver={onDragOver}
       onDrop={onDrop}
       onClick={onSelect}
-      className={`p-4 border-2 rounded-lg cursor-move transition-all ${
-        isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-300'
-      }`}
+      className={`p-4 border-2 rounded-lg cursor-move transition-all ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-300'
+        }`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

@@ -143,11 +143,11 @@ import SellerLayout from '../components/SellerLayout';
 
 export default function ProductsPage() {
   return (
-    <SellerLayout>
+    <>
       <div className="p-6">
         {/* Your page content */}
       </div>
-    </SellerLayout>
+    </>
   );
 }
 ```
@@ -248,7 +248,7 @@ Click "Logout" → Logout and return to login
 4. **Current page** is always highlighted in blue
 
 ### **For Developers**
-1. **Wrap all seller pages** with `<SellerLayout>`
+1. **Wrap all seller pages** with `<>`
 2. **Add padding** to page content (`p-6`)
 3. **Update navigation array** when adding new pages
 4. **Keep sidebar items** to 7-8 max for best UX

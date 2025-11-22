@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Pagination from '../../../../components/Pagination';
 import { usePagination } from '../../../../hooks/usePagination';
 
@@ -42,14 +42,10 @@ export default function ManageUsersPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  useEffect(() => {
-    fetchCompanyAndUsers();
-  }, [companyId]);
-
-  const fetchCompanyAndUsers = async () => {
+  const fetchCompanyAndUsers = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       // Fetch company details
       const companyRes = await fetch(`/api/super-admin/companies/${companyId}`);
       if (companyRes.ok) {
@@ -69,7 +65,11 @@ export default function ManageUsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [companyId]);
+
+  useEffect(() => {
+    fetchCompanyAndUsers();
+  }, [fetchCompanyAndUsers]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -416,11 +416,10 @@ export default function ManageUsersPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          user.is_active
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
+                        className={`px-2 py-1 text-xs font-semibold rounded-full ${user.is_active
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                          }`}
                       >
                         {user.is_active ? 'Active' : 'Inactive'}
                       </span>

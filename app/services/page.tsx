@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 export default function ServicesPage() {
   const [animatedElements, setAnimatedElements] = useState([]);
 
-  function isElementInViewport(elem) {
+  function isElementInViewport(elem: Element) {
     const scroll = window.pageYOffset || document.documentElement.scrollTop;
     const windowHeight = window.innerHeight;
     const elemTop = elem.getBoundingClientRect().top + scroll;
@@ -13,9 +13,9 @@ export default function ServicesPage() {
     return elemTop - scroll < windowHeight;
   }
 
-  function animateSections() {
+  const animateSections = useCallback(() => {
     const elementsToAnimate = document.querySelectorAll(".scroll-anime");
-    const elementsInViewport = [];
+    const elementsInViewport: Element[] = [];
 
     elementsToAnimate.forEach((elem) => {
       if (isElementInViewport(elem)) {
@@ -24,8 +24,8 @@ export default function ServicesPage() {
       }
     });
 
-    setAnimatedElements(elementsInViewport);
-  }
+    setAnimatedElements(elementsInViewport as never[]);
+  }, []);
 
   useEffect(() => {
     animateSections();
@@ -34,7 +34,7 @@ export default function ServicesPage() {
     return () => {
       window.removeEventListener("scroll", animateSections);
     };
-  }, []);
+  }, [animateSections]);
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
@@ -142,7 +142,7 @@ export default function ServicesPage() {
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Local Expertise</h3>
               <p className="text-gray-600 leading-relaxed">
                 From FBR compliance to local payment gateways, we handle all the complexities
-                of the Pakistani market so you don't have to worry about technical details.
+                of the Pakistani market so you don&apos;t have to worry about technical details.
               </p>
             </div>
 
@@ -362,7 +362,7 @@ export default function ServicesPage() {
               Why Choose Zazteck?
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              We're not just another tech company - we're your partner in digital success
+              We&apos;re not just another tech company - we&apos;re your partner in digital success
             </p>
           </div>
 
@@ -373,8 +373,8 @@ export default function ServicesPage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Dedicated Support</h3>
               <p className="text-gray-600">
-                From setup to launch and beyond, we're with you every step of the way.
-                WhatsApp, call, or email - we're always available.
+                From setup to launch and beyond, we&apos;re with you every step of the way.
+                WhatsApp, call, or email - we&apos;re always available.
               </p>
             </div>
 
@@ -421,7 +421,7 @@ export default function ServicesPage() {
             Ready to Transform Your Business?
           </h2>
           <p className="text-xl text-white/90 mb-8 leading-relaxed">
-            Let's discuss your project and create something amazing together.
+            Let&apos;s discuss your project and create something amazing together.
             Get a free consultation and custom quote for your business needs.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">

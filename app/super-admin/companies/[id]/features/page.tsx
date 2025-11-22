@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -26,15 +26,11 @@ export default function FeatureToggles() {
   const [features, setFeatures] = useState<FeatureToggle[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadFeatures();
-  }, [params.id]);
-
-  const loadFeatures = async () => {
+  const loadFeatures = useCallback(async () => {
     try {
       const response = await fetch(`/api/super-admin/companies/${params.id}/features`);
       const data = await response.json();
-      
+
       if (data.success) {
         setFeatures(data.features);
       }
@@ -43,7 +39,11 @@ export default function FeatureToggles() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    loadFeatures();
+  }, [loadFeatures]);
 
   const toggleFeature = async (featureName: string, currentStatus: boolean) => {
     try {
@@ -92,11 +92,11 @@ export default function FeatureToggles() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-6">Enable or Disable Features</h2>
-          
+
           <div className="space-y-4">
             {AVAILABLE_FEATURES.map((feature) => {
               const enabled = isFeatureEnabled(feature.name);
-              
+
               return (
                 <div
                   key={feature.name}
@@ -106,17 +106,15 @@ export default function FeatureToggles() {
                     <h3 className="text-lg font-medium text-gray-900">{feature.label}</h3>
                     <p className="text-sm text-gray-600">{feature.description}</p>
                   </div>
-                  
+
                   <button
                     onClick={() => toggleFeature(feature.name, enabled)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      enabled ? 'bg-green-600' : 'bg-gray-300'
-                    }`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${enabled ? 'bg-green-600' : 'bg-gray-300'
+                      }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        enabled ? 'translate-x-6' : 'translate-x-1'
-                      }`}
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
                     />
                   </button>
                 </div>

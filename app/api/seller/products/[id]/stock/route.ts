@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase-server';
+
+const supabase = getSupabaseServer();
 
 // POST - Adjust stock (in or out)
 export async function POST(

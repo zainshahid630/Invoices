@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServer } from '@/lib/supabase-server';
 import { hashPassword } from '@/lib/auth';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = getSupabaseServer();
 
 export async function POST(request: NextRequest) {
   try {
@@ -124,7 +121,7 @@ export async function POST(request: NextRequest) {
 
     // Create subscription (7-day free trial)
     const trialEndDate = new Date();
-    trialEndDate.setDate(trialEndDate.getDate() + 7); // 7 days from now
+    trialEndDate.setDate(trialEndDate.getDate() + 14); // 7 days from now
 
     await supabase.from('subscriptions').insert({
       company_id: company.id,

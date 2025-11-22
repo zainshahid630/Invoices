@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import SellerLayout from '../components/SellerLayout';
 import { FBR_TEST_SCENARIOS, FBRTestScenario } from './testScenarios';
+import { normalizeNTN } from '@/lib/ntn-utils';
 
 export default function FBRSandboxPage() {
   const router = useRouter();
@@ -77,13 +78,28 @@ export default function FBRSandboxPage() {
         }
 
         // Update payload with company details
-        setPayload(prev => ({
-          ...prev,
-          sellerBusinessName: data.company.business_name || data.company.name || prev.sellerBusinessName,
-          sellerProvince: data.company.province || prev.sellerProvince,
-          sellerNTNCNIC: data.company.ntn_number || prev.sellerNTNCNIC,
-          sellerAddress: data.company.address || prev.sellerAddress,
-        }));
+        setPayload(prev => {
+          // Normalize NTN before setting
+          let normalizedNTN = prev.sellerNTNCNIC;
+          if (data.company.ntn_number) {
+            const ntnResult = normalizeNTN(data.company.ntn_number);
+            if (ntnResult.isValid) {
+              normalizedNTN = ntnResult.normalized;
+            } else {
+              console.warn('Invalid company NTN:', ntnResult.error);
+              // Use original value if normalization fails
+              normalizedNTN = data.company.ntn_number;
+            }
+          }
+
+          return {
+            ...prev,
+            sellerBusinessName: data.company.business_name || data.company.name || prev.sellerBusinessName,
+            sellerProvince: data.company.province || prev.sellerProvince,
+            sellerNTNCNIC: normalizedNTN,
+            sellerAddress: data.company.address || prev.sellerAddress,
+          };
+        });
       }
     } catch (error) {
       console.error('Error loading company settings:', error);
@@ -98,17 +114,39 @@ export default function FBRSandboxPage() {
     setResponse(null);
 
     try {
+      // Normalize only seller NTN (buyer NTN is used as-is for testing)
+      const sellerNTN = normalizeNTN(payload.sellerNTNCNIC);
+      if (!sellerNTN.isValid) {
+        setError(`Invalid Seller NTN: ${sellerNTN.error}`);
+        setLoading(false);
+        return;
+      }
+
+      // Create payload with normalized seller NTN only
+      const normalizedPayload = {
+        ...payload,
+        sellerNTNCNIC: sellerNTN.normalized,
+        // buyerNTNCNIC is used as-is from payload
+      };
+
       const res = await fetch('https://gw.fbr.gov.pk/di_data/v1/di/validateinvoicedata_sb', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(normalizedPayload)
       });
 
       const data = await res.json();
-      setResponse({ status: res.status, data });
+      setResponse({ 
+        status: res.status, 
+        data,
+        normalizedNTNs: {
+          seller: `${payload.sellerNTNCNIC} → ${sellerNTN.normalized}`,
+          buyer: `${payload.buyerNTNCNIC} (unchanged)`
+        }
+      });
 
       if (!res.ok) {
         setError(`Validation failed with status ${res.status}`);
@@ -126,17 +164,39 @@ export default function FBRSandboxPage() {
     setResponse(null);
 
     try {
+      // Normalize only seller NTN (buyer NTN is used as-is for testing)
+      const sellerNTN = normalizeNTN(payload.sellerNTNCNIC);
+      if (!sellerNTN.isValid) {
+        setError(`Invalid Seller NTN: ${sellerNTN.error}`);
+        setLoading(false);
+        return;
+      }
+
+      // Create payload with normalized seller NTN only
+      const normalizedPayload = {
+        ...payload,
+        sellerNTNCNIC: sellerNTN.normalized,
+        // buyerNTNCNIC is used as-is from payload
+      };
+
       const res = await fetch('https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata_sb', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(normalizedPayload)
       });
 
       const data = await res.json();
-      setResponse({ status: res.status, data });
+      setResponse({ 
+        status: res.status, 
+        data,
+        normalizedNTNs: {
+          seller: `${payload.sellerNTNCNIC} → ${sellerNTN.normalized}`,
+          buyer: `${payload.buyerNTNCNIC} (unchanged)`
+        }
+      });
 
       if (!res.ok) {
         setError(`Post failed with status ${res.status}`);
@@ -167,13 +227,34 @@ export default function FBRSandboxPage() {
       };
 
       try {
+        // Normalize only seller NTN (buyer NTN is used as-is for testing)
+        const sellerNTN = normalizeNTN(testPayload.sellerNTNCNIC);
+
+        if (!sellerNTN.isValid) {
+          results.push({
+            scenario: scenario.name,
+            scenarioId: scenario.id,
+            status: 'INVALID_NTN',
+            success: false,
+            error: `Invalid Seller NTN: ${sellerNTN.error}`
+          });
+          continue;
+        }
+
+        // Create payload with normalized seller NTN only
+        const normalizedPayload = {
+          ...testPayload,
+          sellerNTNCNIC: sellerNTN.normalized,
+          // buyerNTNCNIC is used as-is from testPayload
+        };
+
         const res = await fetch('https://gw.fbr.gov.pk/di_data/v1/di/validateinvoicedata_sb', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify(testPayload)
+          body: JSON.stringify(normalizedPayload)
         });
 
         const data = await res.json();
@@ -326,18 +407,18 @@ export default function FBRSandboxPage() {
   }
 
   return (
-    <SellerLayout>
+    <>
       <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">FBR Sandbox Testing</h1>
-          <p className="text-gray-600">Test FBR API validation and posting with sandbox data</p>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">FBR Sandbox Testing</h1>
+        <p className="text-gray-600">Test FBR API validation and posting with sandbox data</p>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Panel - Configuration */}
-          <div className="space-y-6">
-            {/* Token Input */}
-            <div className="bg-white rounded-lg shadow p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Panel - Configuration */}
+        <div className="space-y-6">
+          {/* Token Input */}
+          <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">🔑 Sandbox Security Token</h2>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -387,11 +468,17 @@ export default function FBRSandboxPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                 >
                   <option value="">-- Select a test scenario --</option>
-                  {FBR_TEST_SCENARIOS.map((scenario: FBRTestScenario) => (
-                    <option key={scenario.id} value={scenario.id}>
-                      {scenario.name}
-                    </option>
-                  ))}
+                  {[...FBR_TEST_SCENARIOS]
+                    .sort((a, b) => {
+                      const numA = parseInt(a.id.replace('SN', ''));
+                      const numB = parseInt(b.id.replace('SN', ''));
+                      return numA - numB;
+                    })
+                    .map((scenario: FBRTestScenario) => (
+                      <option key={scenario.id} value={scenario.id}>
+                        {scenario.name}
+                      </option>
+                    ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-2">
                   {FBR_TEST_SCENARIOS.length} pre-defined scenarios available
@@ -486,6 +573,16 @@ export default function FBRSandboxPage() {
                     </p>
                   </div>
 
+                  {response.normalizedNTNs && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h3 className="text-sm font-semibold text-blue-900 mb-2">🔢 NTN Normalization</h3>
+                      <div className="text-xs text-blue-800 space-y-1">
+                        <p><strong>Seller:</strong> {response.normalizedNTNs.seller}</p>
+                        <p><strong>Buyer:</strong> {response.normalizedNTNs.buyer}</p>
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <h3 className="text-sm font-semibold text-gray-700 mb-2">Response Data:</h3>
                     <pre className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-xs overflow-auto max-h-[600px]">
@@ -556,6 +653,6 @@ export default function FBRSandboxPage() {
           </div>
         </div>
       </div>
-    </SellerLayout>
+    </>
   );
 }

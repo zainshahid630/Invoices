@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServer } from '@/lib/supabase-server';
 import { EmailService, generateInvoiceEmailHTML } from '@/lib/email-service';
 import puppeteer from 'puppeteer';
 import { generateInvoiceHTML } from '@/lib/pdf-generator';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = getSupabaseServer();
 
 export async function POST(request: Request) {
   try {
@@ -70,14 +67,14 @@ export async function POST(request: Request) {
     // Determine customer email
     let recipientEmail = customer_email;
     let customerName = invoice.buyer_name || 'Valued Customer';
-    
+
     if (invoice.customer_id) {
       const { data: customer } = await supabase
         .from('customers')
         .select('name, email, business_name')
         .eq('id', invoice.customer_id)
         .single();
-      
+
       if (customer) {
         if (!recipientEmail && customer.email) {
           recipientEmail = customer.email;
@@ -106,7 +103,7 @@ export async function POST(request: Request) {
 
     // Generate PDF from invoice HTML
     const invoiceHTML = generateInvoiceHTML(invoice, company);
-    
+
     let pdfBuffer: Buffer;
     try {
       const browser = await puppeteer.launch({
@@ -151,9 +148,9 @@ export async function POST(request: Request) {
       .replace(/{total_amount}/g, parseFloat(invoice.total_amount).toLocaleString('en-PK'));
 
     // Build body from template
-    let bodyMessage = company.email_body_template || 
+    let bodyMessage = company.email_body_template ||
       `Dear {customer_name},\n\nPlease find attached your invoice {invoice_number} dated {invoice_date}.\n\nThank you for your business!\n\nBest regards,\n{company_name}`;
-    
+
     bodyMessage = bodyMessage
       .replace(/{customer_name}/g, customerName)
       .replace(/{invoice_number}/g, invoice.invoice_number)
@@ -205,8 +202,6 @@ export async function POST(request: Request) {
         status: 'sent',
         message_id: result.messageId,
         sent_at: new Date().toISOString(),
-      }).catch(() => {
-        // Ignore if table doesn't exist
       });
 
       return NextResponse.json({
@@ -217,7 +212,7 @@ export async function POST(request: Request) {
       });
     } else {
       return NextResponse.json(
-        { 
+        {
           error: result.error || 'Failed to send email',
           details: result.details
         },

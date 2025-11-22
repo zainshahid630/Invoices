@@ -1,56 +1,111 @@
 import type { Metadata } from "next";
+import { Inter } from 'next/font/google';
 import "./globals.css";
 import ToastProvider from "./components/ToastProvider";
 import GoogleAnalytics from "@/lib/google-analytics";
+import { Providers } from "./providers";
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://invoicefbr.com'),
   title: {
-    default: "InvoiceFBR - Best FBR Compliant Invoicing Software in Pakistan | Zazteck",
+    default: "InvoiceFBR - FBR Compliant Invoicing Software Pakistan",
     template: "%s | InvoiceFBR"
   },
   description: "Pakistan's #1 FBR-compliant invoicing software. Create professional invoices, automate FBR posting. Trusted by 130+ businesses. Free trial.",
   keywords: [
     // Primary Keywords
-    "FBR invoice software Pakistan",
-    "FBR compliant invoicing",
-    "digital invoice Pakistan",
-    "invoice management system",
-    "FBR integration software",
-    
+    "FBR Digital Invoice",
+    "FBR Digital Invoicing System",
+    "Pakistan e-invoice",
+    "FBR e-invoice",
+    "Digital invoicing Pakistan",
+    "FBR invoice verification",
+    "FBR invoice submission",
+    "FBR POS invoice",
+    "FBR tax invoice",
+    "Tax invoice Pakistan",
+    "FBR e-services",
+    "FBR invoice API",
+    "FBR sales tax invoice",
+    "FBR integration API",
+    "Digital tax system Pakistan",
+    "FBR QR invoice",
     // Secondary Keywords
-    "online invoice generator Pakistan",
-    "GST invoice software",
-    "sales tax invoice Pakistan",
-    "invoice maker Pakistan",
-    "billing software Pakistan",
-    
+    "What is FBR digital invoice",
+    "How to submit invoice to FBR",
+    "FBR invoice validation",
+    "FBR invoice token",
+    "FBR invoice format",
+    "FBR invoicing rules",
+    "FBR new tax system",
+    "FBR invoice software",
+    "Pakistan tax invoicing",
+    "FBR API documentation",
+    "FBR sandbox API",
+    "FBR test invoice",
+    "Real-time invoice reporting",
+    "Sales tax reporting Pakistan",
+    "Tax compliance software Pakistan",
     // Long-tail Keywords
-    "automatic FBR invoice posting",
-    "FBR digital invoice integration",
-    "WhatsApp invoice sending",
-    "invoice software for small business Pakistan",
-    "cloud based invoicing Pakistan",
-    
-    // Location-based
-    "invoice software Karachi",
-    "invoice software Lahore",
-    "invoice software Islamabad",
-    
-    // Feature-based
-    "customer management software",
-    "inventory management Pakistan",
-    "payment tracking software",
-    "invoice template Pakistan",
-    
-    // Brand
-    "Zazteck invoice",
-    "InvoiceFBR"
+    "How to generate digital invoice for FBR",
+    "How to automate FBR invoice submission",
+    "Best digital invoicing software in Pakistan",
+    "How to integrate POS with FBR",
+    "Digital invoice with QR code Pakistan",
+    "FBR invoice error codes",
+    "FBR invoice rejected solution",
+    "FBR digital invoice requirements",
+    "Step-by-step FBR invoice registration",
+    "Online invoice portal Pakistan",
+    "How to check invoice status on FBR",
+    "E-invoicing benefits for businesses in Pakistan",
+    // Service / Software Keywords
+    "FBR invoice generator",
+    "FBR invoicing software Pakistan",
+    "Online invoice system Pakistan",
+    "Digital invoice management",
+    "Invoice automation system",
+    "QR invoice generator Pakistan",
+    "Cloud invoicing software",
+    "FBR API integration service",
+    // Taxation Keywords
+    "Sales tax Pakistan",
+    "NTN registration Pakistan",
+    "FBR login",
+    "STRN registration",
+    "POS integration FBR",
+    "FBR compliance",
+    "Withholding tax Pakistan",
+    "Income tax Pakistan",
+    "FBR return filing",
+    // Brand + SEO Keywords
+    "InvoiceFBR digital invoicing",
+    "InvoiceFBR QR invoice generator",
+    "InvoiceFBR FBR integration",
+    "InvoiceFBR tax invoice maker",
+    "InvoiceFBR cloud invoice system",
+    "InvoiceFBR e-invoice API",
+    "InvoiceFBR for businesses",
+    "InvoiceFBR online tax invoicing",
+    // Transactional Keywords
+    "Buy digital invoice software Pakistan",
+    "FBR invoice solution",
+    "FBR invoice submission service",
+    "POS integration service Pakistan",
+    "Best tax invoice software",
+    "E-invoice generator online",
+    "FBR software provider"
   ],
   authors: [{ name: "Zazteck", url: "https://zazteck.com" }],
   creator: "Zazteck",
   publisher: "Zazteck",
-  
+
   robots: {
     index: true,
     follow: true,
@@ -62,7 +117,7 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  
+
   icons: {
     icon: [
       { url: '/icon.svg' },
@@ -70,9 +125,9 @@ export const metadata: Metadata = {
     ],
     apple: '/icon.svg',
   },
-  
+
   manifest: '/manifest.json',
-  
+
   openGraph: {
     type: "website",
     locale: "en_PK",
@@ -89,7 +144,7 @@ export const metadata: Metadata = {
       },
     ],
   },
-  
+
   twitter: {
     card: "summary_large_image",
     title: "InvoiceFBR - Best FBR Compliant Invoicing Software in Pakistan",
@@ -97,18 +152,18 @@ export const metadata: Metadata = {
     images: ["https://invoicefbr.com/og-image.jpg"],
     creator: "@zazteck",
   },
-  
+
   alternates: {
     canonical: "https://invoicefbr.com",
   },
-  
+
   verification: {
-    google: "PASTE-YOUR-CODE-HERE",
+    google: null,
     // yandex: "your-yandex-verification-code", // Optional: Add later if needed
   },
-  
+
   category: "Business Software",
-  
+
   other: {
     "mobile-web-app-capable": "yes",
     "apple-mobile-web-app-capable": "yes",
@@ -123,12 +178,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en-PK">
+    <html lang="en-PK" className={inter.variable}>
       <head>
         {/* Preconnect to external domains for performance */}
         <link rel="preconnect" href="https://images.unsplash.com" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
-        
+
+        {/* FBR Gateway - Critical for invoice posting */}
+        <link rel="preconnect" href="https://gw.fbr.gov.pk" />
+        <link rel="dns-prefetch" href="https://gw.fbr.gov.pk" />
+
+        {/* Supabase - Database connection */}
+        <link rel="preconnect" href="https://xyzcompany.supabase.co" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://xyzcompany.supabase.co" />
+
         {/* Structured Data - Organization */}
         <script
           type="application/ld+json"
@@ -158,7 +221,7 @@ export default function RootLayout({
             })
           }}
         />
-        
+
         {/* Structured Data - SoftwareApplication */}
         <script
           type="application/ld+json"
@@ -184,7 +247,7 @@ export default function RootLayout({
             })
           }}
         />
-        
+
         {/* Structured Data - FAQ */}
         <script
           type="application/ld+json"
@@ -246,11 +309,13 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>
+      <body className={inter.className}>
         <GoogleAnalytics measurementId="G-Q42N5FT1PC" />
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <Providers>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </Providers>
       </body>
     </html>
   );

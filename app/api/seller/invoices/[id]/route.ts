@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServer } from '@/lib/supabase-server';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = getSupabaseServer();
 
 // GET - Get a single invoice with items
 export async function GET(
@@ -152,9 +149,9 @@ export async function PUT(
       return NextResponse.json({ error: 'Cannot edit deleted invoice' }, { status: 400 });
     }
 
-    if (currentInvoice.status !== 'draft') {
+    if (currentInvoice.status !== 'draft' && currentInvoice.status !== 'verified') {
       return NextResponse.json({ 
-        error: 'Only draft invoices can be edited. Current status: ' + currentInvoice.status 
+        error: 'Only draft and verified invoices can be edited. Current status: ' + currentInvoice.status 
       }, { status: 400 });
     }
 

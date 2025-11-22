@@ -1,0 +1,50 @@
+[
+  {
+    "name": "TEST COMPANY A",
+    "business_name": "TEST COMPANY A LTD",
+    "ntn_number": "1111111-1",
+    "gst_number": "01-11-1111-111-11",
+    "address": "Test Address A",
+    "phone_number": "03001111111"
+  },
+  {
+    "name": "TEST COMPANY B",
+    "business_name": "TEST COMPANY B LTD",
+    "ntn_number": "2222222-2",
+    "gst_number": "02-22-2222-222-22",
+    "address": "Test Address B",
+    "phone_number": "03002222222"
+  },
+  {
+    "name": "TEST COMPANY A",
+    "business_name": "DUPLICATE NAME",
+    "ntn_number": "3333333-3",
+    "gst_number": "03-33-3333-333-33",
+    "address": "Test Address C",
+    "phone_number": "03003333333"
+  },
+  {
+    "name": "TEST COMPANY C",
+    "business_name": "TEST COMPANY C LTD",
+    "ntn_number": "1111111-1",
+    "gst_number": "04-44-4444-444-44",
+    "address": "Test Address D",
+    "phone_number": "03004444444"
+  },
+  {
+    "name": "TEST COMPANY D",
+    "business_name": "TEST COMPANY D LTD",
+    "ntn_number": "5555555-5",
+    "gst_number": "01-11-1111-111-11",
+    "address": "Test Address E",
+    "phone_number": "03005555555"
+  },
+  {
+    "name": "TEST COMPANY E",
+    "business_name": "TEST COMPANY E LTD",
+    "ntn_number": "6666666-6",
+    "gst_number": "06-66-6666-666-66",
+    "address": "Test Address F",
+    "phone_number": "03006666666"
+  }
+]

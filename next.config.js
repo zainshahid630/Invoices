@@ -2,13 +2,16 @@
 const nextConfig = {
   // Disable static export to allow dynamic routes
   output: undefined,
-  
-  // Disable ESLint and TypeScript errors during build
+
+  // Enable React Strict Mode for better development experience
+  reactStrictMode: true,
+
+  // Enable ESLint and TypeScript errors during build
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
   // Allow dynamic routes and fix suspense warnings
@@ -19,12 +22,16 @@ const nextConfig = {
   // SEO & Performance Optimizations
   compress: true,
   poweredByHeader: false,
-  
+
   // Image optimization
   images: {
     domains: ['images.unsplash.com'],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
   // Headers for SEO, security, and caching

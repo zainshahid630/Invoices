@@ -118,11 +118,24 @@ export default function CustomerDetailPage() {
   const totalInvoices = invoices.length;
   const totalInvoiceAmount = invoices.reduce((sum, inv) => sum + parseFloat(inv.total_amount.toString()), 0);
   const pendingInvoices = invoices.filter(inv => inv.payment_status === 'pending' || inv.payment_status === 'partial').length;
-  const totalPayments = payments.reduce((sum, pay) => sum + parseFloat(pay.amount.toString()), 0);
+  
+  // Calculate paid amount based on invoice payment_status
+  const paidAmount = invoices
+    .filter(inv => inv.payment_status === 'paid')
+    .reduce((sum, inv) => sum + parseFloat(inv.total_amount.toString()), 0);
+  
+  const partialAmount = payments
+    .filter(pay => {
+      const invoice = invoices.find(inv => inv.id === pay.invoice_id);
+      return invoice && invoice.payment_status === 'partial';
+    })
+    .reduce((sum, pay) => sum + parseFloat(pay.amount.toString()), 0);
+  
+  const totalPayments = paidAmount + partialAmount;
   const pendingAmount = totalInvoiceAmount - totalPayments;
 
   return (
-    <SellerLayout>
+    <>
       <div className="p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
@@ -280,6 +293,7 @@ export default function CustomerDetailPage() {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -297,6 +311,14 @@ export default function CustomerDetailPage() {
                               }`}>
                                 {invoice.payment_status}
                               </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <Link
+                                href={`/seller/invoices/${invoice.id}`}
+                                className="text-blue-600 hover:text-blue-800 font-medium"
+                              >
+                                View
+                              </Link>
                             </td>
                           </tr>
                         ))}
@@ -348,7 +370,7 @@ export default function CustomerDetailPage() {
           </div>
         </div>
       </div>
-    </SellerLayout>
+    </>
   );
 }
 

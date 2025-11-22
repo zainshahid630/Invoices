@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import SellerLayout from '../components/SellerLayout';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Pagination from '../../components/Pagination';
 import { usePagination } from '../../hooks/usePagination';
 
@@ -21,9 +21,8 @@ interface Product {
 
 export default function ProductsPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<any>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -32,48 +31,52 @@ export default function ProductsPage() {
       router.push('/seller/login');
       return;
     }
-
-    const userData = JSON.parse(session);
-    setUser(userData);
-    loadProducts(userData.company_id);
+    setUser(JSON.parse(session));
   }, [router]);
 
-  const loadProducts = async (companyId: string) => {
-    try {
-      const response = await fetch(`/api/seller/products?company_id=${companyId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data.products || []);
-      }
-    } catch (error) {
-      console.error('Error loading products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const companyId = user?.company_id;
 
-  const handleDelete = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) {
-      return;
-    }
+  // Fetch products with React Query
+  const { data: products = [], isLoading } = useQuery<Product[]>({
+    queryKey: ['products', companyId],
+    queryFn: async () => {
+      const res = await fetch(`/api/seller/products?company_id=${companyId}`);
+      if (!res.ok) throw new Error('Failed to fetch products');
+      const data = await res.json();
+      return (data.products || []) as Product[];
+    },
+    enabled: !!companyId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-    try {
-      const response = await fetch(`/api/seller/products/${productId}`, {
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      const res = await fetch(`/api/seller/products/${productId}`, {
         method: 'DELETE',
       });
+      if (!res.ok) throw new Error('Delete failed');
+      return res.json();
+    },
+    onSuccess: () => {
+      // Invalidate and refetch products
+      queryClient.invalidateQueries({ queryKey: ['products', companyId] });
+    },
+  });
 
-      if (response.ok) {
-        loadProducts(user.company_id);
-      }
-    } catch (error) {
-      console.error('Error deleting product:', error);
+  const handleDelete = (productId: string) => {
+    if (confirm('Are you sure you want to delete this product?')) {
+      deleteMutation.mutate(productId);
     }
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.hs_code?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter products based on search
+  const filteredProducts = useMemo(() => {
+    return products.filter(product =>
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.hs_code?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [products, searchTerm]);
 
   // Pagination
   const {
@@ -88,13 +91,12 @@ export default function ProductsPage() {
     initialItemsPerPage: 10,
   });
 
-  if (loading) {
+  if (isLoading || !user) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
   return (
-    <SellerLayout>
-      <div className="p-6">
+    <div className="p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -244,7 +246,6 @@ export default function ProductsPage() {
           />
         )}
       </div>
-    </SellerLayout>
   );
 }
 

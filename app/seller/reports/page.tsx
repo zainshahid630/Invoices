@@ -1,8 +1,86 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import SellerLayout from '../components/SellerLayout';
+import { useQuery } from '@tanstack/react-query';
+
+// Simple Pagination Component
+function Pagination({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) {
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push('...');
+      
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      
+      if (currentPage < totalPages - 2) pages.push('...');
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
+  return (
+    <div className="flex items-center justify-center gap-2">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className={`px-3 py-1 rounded-md text-sm font-medium ${
+          currentPage === 1
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+        }`}
+      >
+        Previous
+      </button>
+
+      {getPageNumbers().map((page, index) => {
+        if (page === '...') {
+          return (
+            <span key={`ellipsis-${index}`} className="px-3 py-1 text-gray-500">
+              ...
+            </span>
+          );
+        }
+        return (
+          <button
+            key={page}
+            onClick={() => onPageChange(page as number)}
+            className={`px-3 py-1 rounded-md text-sm font-medium ${
+              currentPage === page
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+            }`}
+          >
+            {page}
+          </button>
+        );
+      })}
+
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className={`px-3 py-1 rounded-md text-sm font-medium ${
+          currentPage === totalPages
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+        }`}
+      >
+        Next
+      </button>
+    </div>
+  );
+}
 
 interface ReportData {
   summary?: any;
@@ -14,50 +92,42 @@ interface ReportData {
 
 export default function ReportsPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const [activeReport, setActiveReport] = useState('sales_summary');
-  const [reportData, setReportData] = useState<ReportData>({});
   
   // Date range state
   const [dateRange, setDateRange] = useState({
-    start_date: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0], // First day of current month
-    end_date: new Date().toISOString().split('T')[0], // Today
+    start_date: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+    end_date: new Date().toISOString().split('T')[0],
   });
 
   const [customRange, setCustomRange] = useState(false);
 
   useEffect(() => {
-    loadReport();
-  }, [activeReport, dateRange]);
+    const session = localStorage.getItem('seller_session');
+    if (!session) {
+      router.push('/seller/login');
+      return;
+    }
+    setUser(JSON.parse(session));
+  }, [router]);
 
-  const loadReport = async () => {
-    try {
-      setLoading(true);
-      const session = localStorage.getItem('seller_session');
-      if (!session) {
-        router.push('/seller/login');
-        return;
-      }
+  const companyId = user?.company_id;
 
-      const userData = JSON.parse(session);
-      const companyId = userData.company_id;
-
+  // Fetch report data with React Query
+  const { data: reportData = {}, isLoading: loading } = useQuery<ReportData>({
+    queryKey: ['reports', companyId, activeReport, dateRange.start_date, dateRange.end_date],
+    queryFn: async () => {
       const response = await fetch(
         `/api/seller/reports?company_id=${companyId}&report_type=${activeReport}&start_date=${dateRange.start_date}&end_date=${dateRange.end_date}`
       );
-      const data = await response.json();
-
-      if (response.ok) {
-        setReportData(data);
-      } else {
-        console.error('Error loading report:', data.error);
-      }
-    } catch (error) {
-      console.error('Error loading report:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (!response.ok) throw new Error('Failed to fetch report');
+      return response.json();
+    },
+    enabled: !!companyId,
+    staleTime: 2 * 60 * 1000, // 2 minutes - reports don't change frequently
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+  });
 
   const setQuickRange = (range: string) => {
     const today = new Date();
@@ -147,8 +217,7 @@ export default function ReportsPage() {
   ];
 
   return (
-    <SellerLayout>
-      <div className="p-6">
+    <div className="p-6">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
@@ -275,7 +344,6 @@ export default function ReportsPage() {
           </div>
         )}
       </div>
-    </SellerLayout>
   );
 }
 
@@ -283,6 +351,16 @@ export default function ReportsPage() {
 function SalesSummaryReport({ data }: { data: ReportData }) {
   const summary = data.summary || {};
   const invoices = data.invoices || [];
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(invoices.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedInvoices = invoices.slice(startIndex, endIndex);
 
   return (
     <div>
@@ -352,37 +430,57 @@ function SalesSummaryReport({ data }: { data: ReportData }) {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {invoices.map((invoice: any) => (
-                <tr key={invoice.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{invoice.invoice_number}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{new Date(invoice.invoice_date).toLocaleDateString()}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{invoice.buyer_name || 'N/A'}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-gray-900">PKR {parseFloat(invoice.total_amount).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
-                      invoice.status === 'verified' ? 'bg-blue-100 text-blue-800' :
-                      invoice.status === 'fbr_posted' ? 'bg-purple-100 text-purple-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {invoice.status.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      invoice.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
-                      invoice.payment_status === 'partial' ? 'bg-yellow-100 text-yellow-800' :
-                      invoice.payment_status === 'overdue' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {invoice.payment_status.toUpperCase()}
-                    </span>
+              {paginatedInvoices.length > 0 ? (
+                paginatedInvoices.map((invoice: any) => (
+                  <tr key={invoice.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{invoice.invoice_number}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{new Date(invoice.invoice_date).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{invoice.buyer_name || 'N/A'}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-gray-900">PKR {parseFloat(invoice.total_amount).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
+                        invoice.status === 'verified' ? 'bg-blue-100 text-blue-800' :
+                        invoice.status === 'fbr_posted' ? 'bg-purple-100 text-purple-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {invoice.status.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        invoice.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
+                        invoice.payment_status === 'partial' ? 'bg-yellow-100 text-yellow-800' :
+                        invoice.payment_status === 'overdue' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {invoice.payment_status.toUpperCase()}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                    No invoices found for the selected date range
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
+        {invoices.length > itemsPerPage && (
+          <div className="px-4 py-3 border-t border-gray-200">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+            <div className="text-sm text-gray-600 text-center mt-2">
+              Showing {startIndex + 1} to {Math.min(endIndex, invoices.length)} of {invoices.length} invoices
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -391,6 +489,16 @@ function SalesSummaryReport({ data }: { data: ReportData }) {
 // Customer Report Component
 function CustomerReport({ data }: { data: ReportData }) {
   const customers = data.customers || [];
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(customers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedCustomers = customers.slice(startIndex, endIndex);
 
   return (
     <div>
@@ -410,19 +518,39 @@ function CustomerReport({ data }: { data: ReportData }) {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {customers.map((customer: any) => (
-                <tr key={customer.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{customer.name}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{customer.business_name || 'N/A'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{customer.total_invoices}</td>
-                  <td className="px-4 py-3 text-sm text-green-700">{customer.paid_invoices}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-gray-900">PKR {customer.total_amount}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-red-700">PKR {customer.pending_amount}</td>
+              {paginatedCustomers.length > 0 ? (
+                paginatedCustomers.map((customer: any) => (
+                  <tr key={customer.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{customer.name}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{customer.business_name || 'N/A'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{customer.total_invoices}</td>
+                    <td className="px-4 py-3 text-sm text-green-700">{customer.paid_invoices}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-gray-900">PKR {customer.total_amount}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-red-700">PKR {customer.pending_amount}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                    No customers found for the selected date range
+                  </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
+        {customers.length > itemsPerPage && (
+          <div className="px-4 py-3 border-t border-gray-200">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+            <div className="text-sm text-gray-600 text-center mt-2">
+              Showing {startIndex + 1} to {Math.min(endIndex, customers.length)} of {customers.length} customers
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -431,6 +559,16 @@ function CustomerReport({ data }: { data: ReportData }) {
 // Product Report Component
 function ProductReport({ data }: { data: ReportData }) {
   const products = data.products || [];
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProducts = products.slice(startIndex, endIndex);
 
   return (
     <div>
@@ -450,19 +588,39 @@ function ProductReport({ data }: { data: ReportData }) {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {products.map((product: any) => (
-                <tr key={product.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{product.name}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{product.hs_code || 'N/A'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">PKR {parseFloat(product.unit_price).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{product.current_stock}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-blue-700">{product.total_sold}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-green-700">PKR {product.total_revenue}</td>
+              {paginatedProducts.length > 0 ? (
+                paginatedProducts.map((product: any) => (
+                  <tr key={product.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{product.name}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{product.hs_code || 'N/A'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">PKR {parseFloat(product.unit_price).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{product.current_stock}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-blue-700">{product.total_sold}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-green-700">PKR {product.total_revenue}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                    No products found for the selected date range
+                  </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
+        {products.length > itemsPerPage && (
+          <div className="px-4 py-3 border-t border-gray-200">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+            <div className="text-sm text-gray-600 text-center mt-2">
+              Showing {startIndex + 1} to {Math.min(endIndex, products.length)} of {products.length} products
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -472,6 +630,16 @@ function ProductReport({ data }: { data: ReportData }) {
 function PaymentReport({ data }: { data: ReportData }) {
   const summary = data.summary || {};
   const payments = data.payments || [];
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(payments.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedPayments = payments.slice(startIndex, endIndex);
 
   return (
     <div>
@@ -522,19 +690,39 @@ function PaymentReport({ data }: { data: ReportData }) {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {payments.map((payment: any) => (
-                <tr key={payment.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-700">{new Date(payment.payment_date).toLocaleDateString()}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{payment.invoice?.invoice_number || 'N/A'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{payment.customer?.name || 'N/A'}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-green-700">PKR {parseFloat(payment.amount).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{payment.payment_method || 'N/A'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{payment.reference_number || 'N/A'}</td>
+              {paginatedPayments.length > 0 ? (
+                paginatedPayments.map((payment: any) => (
+                  <tr key={payment.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm text-gray-700">{new Date(payment.payment_date).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{payment.invoice?.invoice_number || 'N/A'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{payment.customer?.name || 'N/A'}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-green-700">PKR {parseFloat(payment.amount).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{payment.payment_method || 'N/A'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{payment.reference_number || 'N/A'}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                    No payments found for the selected date range
+                  </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
+        {payments.length > itemsPerPage && (
+          <div className="px-4 py-3 border-t border-gray-200">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+            <div className="text-sm text-gray-600 text-center mt-2">
+              Showing {startIndex + 1} to {Math.min(endIndex, payments.length)} of {payments.length} payments
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -544,6 +732,16 @@ function PaymentReport({ data }: { data: ReportData }) {
 function TaxReport({ data }: { data: ReportData }) {
   const summary = data.summary || {};
   const invoices = data.invoices || [];
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(invoices.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedInvoices = invoices.slice(startIndex, endIndex);
 
   return (
     <div>
@@ -588,22 +786,42 @@ function TaxReport({ data }: { data: ReportData }) {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {invoices.map((invoice: any) => (
-                <tr key={invoice.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{invoice.invoice_number}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{new Date(invoice.invoice_date).toLocaleDateString()}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">PKR {parseFloat(invoice.subtotal).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-sm text-green-700">PKR {parseFloat(invoice.sales_tax_amount || 0).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-sm text-purple-700">PKR {parseFloat(invoice.further_tax_amount || 0).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-orange-700">
-                    PKR {(parseFloat(invoice.sales_tax_amount || 0) + parseFloat(invoice.further_tax_amount || 0)).toFixed(2)}
+              {paginatedInvoices.length > 0 ? (
+                paginatedInvoices.map((invoice: any) => (
+                  <tr key={invoice.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{invoice.invoice_number}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{new Date(invoice.invoice_date).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">PKR {parseFloat(invoice.subtotal).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-sm text-green-700">PKR {parseFloat(invoice.sales_tax_amount || 0).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-sm text-purple-700">PKR {parseFloat(invoice.further_tax_amount || 0).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-orange-700">
+                      PKR {(parseFloat(invoice.sales_tax_amount || 0) + parseFloat(invoice.further_tax_amount || 0)).toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-semibold text-gray-900">PKR {parseFloat(invoice.total_amount).toFixed(2)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                    No invoices found for the selected date range
                   </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-gray-900">PKR {parseFloat(invoice.total_amount).toFixed(2)}</td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
+        {invoices.length > itemsPerPage && (
+          <div className="px-4 py-3 border-t border-gray-200">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+            <div className="text-sm text-gray-600 text-center mt-2">
+              Showing {startIndex + 1} to {Math.min(endIndex, invoices.length)} of {invoices.length} invoices
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

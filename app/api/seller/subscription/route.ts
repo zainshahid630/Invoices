@@ -1,54 +1,98 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase-server';
+
+const supabase = getSupabaseServer();
 
 // GET subscription for logged-in seller's company
 export async function GET(request: NextRequest) {
   try {
-    // Get user session from localStorage (passed via headers or cookies)
-    const authHeader = request.headers.get('authorization');
-    
-    // For now, we'll get company_id from the session stored in localStorage
-    // In a production app, you'd validate the JWT token here
-    
-    // Try to get company_id from query params (temporary solution)
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('company_id');
     
     if (!companyId) {
-      // Try to get from cookie or session
-      const cookieHeader = request.headers.get('cookie');
-      const sessionCookie = cookieHeader?.split(';').find(c => c.trim().startsWith('seller_session='));
-      
-      if (!sessionCookie) {
-        return NextResponse.json(
-          { success: false, error: 'Not authenticated' },
-          { status: 401 }
-        );
-      }
-      
-      // Parse session from cookie
-      try {
-        const sessionData = JSON.parse(decodeURIComponent(sessionCookie.split('=')[1]));
-        const company_id = sessionData.company_id;
-        
-        if (!company_id) {
-          return NextResponse.json(
-            { success: false, error: 'Company ID not found in session' },
-            { status: 400 }
-          );
-        }
-        
-        return await fetchSubscription(company_id);
-      } catch (e) {
-        // If cookie parsing fails, try localStorage approach
-        return NextResponse.json(
-          { success: false, error: 'Invalid session' },
-          { status: 401 }
-        );
-      }
+      return NextResponse.json(
+        { success: false, error: 'Company ID required' },
+        { status: 400 }
+      );
     }
     
     return await fetchSubscription(companyId);
+  } catch (error) {
+    console.error('API error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - Create or update subscription
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { companyId, planId, amount, txnRefNo } = body;
+    
+    if (!companyId || !planId || !amount) {
+      return NextResponse.json(
+        { success: false, error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+    
+    // Calculate subscription dates
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + 1); // 1 month subscription
+    
+    // Create subscription record
+    const { data: subscription, error } = await supabase
+      .from('subscriptions')
+      .insert({
+        company_id: companyId,
+        plan_id: planId,
+        start_date: startDate.toISOString().split('T')[0],
+        end_date: endDate.toISOString().split('T')[0],
+        amount: amount,
+        status: 'pending',
+        payment_status: 'pending',
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating subscription:', error);
+      return NextResponse.json(
+        { success: false, error: 'Failed to create subscription' },
+        { status: 500 }
+      );
+    }
+    
+    // Create payment record
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .insert({
+        company_id: companyId,
+        subscription_id: subscription.id,
+        amount: amount,
+        payment_date: new Date().toISOString().split('T')[0], // Add payment date
+        payment_method: 'jazzcash',
+        payment_status: 'pending',
+        payment_type: 'received',
+        reference_number: txnRefNo,
+        gateway_transaction_id: txnRefNo,
+      })
+      .select()
+      .single();
+    
+    if (paymentError) {
+      console.error('Error creating payment:', paymentError);
+    }
+    
+    return NextResponse.json({
+      success: true,
+      subscription,
+      payment,
+    });
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(

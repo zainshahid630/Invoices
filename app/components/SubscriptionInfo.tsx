@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 interface Subscription {
   id: string;
@@ -12,51 +13,34 @@ interface Subscription {
 }
 
 export default function SubscriptionInfo() {
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  useEffect(() => {
-    loadSubscription();
+  // Get company_id from localStorage
+  const companyId = useMemo(() => {
+    const session = localStorage.getItem('seller_session');
+    if (!session) return null;
+    const sessionData = JSON.parse(session);
+    return sessionData.company_id;
   }, []);
 
-  const loadSubscription = async () => {
-    try {
-      // Get company_id from localStorage
-      const session = localStorage.getItem('seller_session');
-      if (!session) {
-        setLoading(false);
-        return;
-      }
-      
-      const sessionData = JSON.parse(session);
-      const companyId = sessionData.company_id;
-      
-      if (!companyId) {
-        setLoading(false);
-        return;
-      }
-      
+  // Fetch subscription with React Query
+  const { data, isLoading } = useQuery({
+    queryKey: ['subscription', companyId],
+    queryFn: async () => {
       const response = await fetch(`/api/seller/subscription?company_id=${companyId}`);
-      const data = await response.json();
-      
-      if (data.success && data.subscription) {
-        setSubscription(data.subscription);
-      }
-    } catch (error) {
-      console.error('Error loading subscription:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const result = await response.json();
+      return result.success ? result.subscription : null;
+    },
+    enabled: !!companyId,
+    staleTime: 5 * 60 * 1000, // 5 minutes - subscription doesn't change often
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+  });
 
-  if (loading) {
-    return null; // Don't show anything while loading
+  if (isLoading || !data) {
+    return null;
   }
 
-  if (!subscription) {
-    return null; // No subscription, don't show anything
-  }
+  const subscription = data;
 
   const daysRemaining = Math.ceil(
     (new Date(subscription.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)

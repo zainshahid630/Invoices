@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -24,15 +24,11 @@ export default function CompanyDetail() {
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<Company>>({});
 
-  useEffect(() => {
-    loadCompany();
-  }, [params.id]);
-
-  const loadCompany = async () => {
+  const loadCompany = useCallback(async () => {
     try {
       const response = await fetch(`/api/super-admin/companies/${params.id}`);
       const data = await response.json();
-      
+
       if (data.success) {
         setCompany(data.company);
         setFormData(data.company);
@@ -42,7 +38,11 @@ export default function CompanyDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    loadCompany();
+  }, [loadCompany]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -53,7 +53,7 @@ export default function CompanyDetail() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const response = await fetch(`/api/super-admin/companies/${params.id}`, {
         method: 'PATCH',
@@ -266,11 +266,10 @@ export default function CompanyDetail() {
                 <div className="text-sm font-medium text-gray-500">Status</div>
                 <div className="mt-1">
                   <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      company.is_active
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${company.is_active
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                      }`}
                   >
                     {company.is_active ? 'Active' : 'Inactive'}
                   </span>

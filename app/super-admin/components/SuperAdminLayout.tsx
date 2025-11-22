@@ -68,6 +68,12 @@ export default function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
                 Seed Data
               </Link>
               <Link
+                href="/super-admin/payments"
+                className="px-4 py-2 text-blue-600 hover:text-blue-700 font-medium flex items-center"
+              >
+                💳 Payments
+              </Link>
+              <Link
                 href="/super-admin/whatsapp"
                 className="px-4 py-2 text-green-600 hover:text-green-700 font-medium flex items-center"
               >

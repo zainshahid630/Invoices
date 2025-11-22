@@ -100,7 +100,7 @@ export default function EditProductPage() {
   }
 
   return (
-    <SellerLayout>
+    <>
       <div className="p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
@@ -251,7 +251,7 @@ export default function EditProductPage() {
         </div>
         </div>
       </div>
-    </SellerLayout>
+    </>
   );
 }
 
