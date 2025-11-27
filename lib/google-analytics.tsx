@@ -41,7 +41,7 @@ export const trackEvent = (action: string, category: string, label?: string, val
 // Track page views
 export const trackPageView = (url: string) => {
   if (typeof window !== 'undefined' && (window as any).gtag) {
-    (window as any).gtag('config', 'G-Q42N5FT1PC', {
+    (window as any).gtag('config', 'G-BFZ49GLZYH', {
       page_path: url,
     })
   }

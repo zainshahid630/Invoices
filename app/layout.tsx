@@ -310,7 +310,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         {/* DevTools blocker - DISABLED for all environments */}
-        <GoogleAnalytics measurementId="G-Q42N5FT1PC" />
+        <GoogleAnalytics measurementId="G-BFZ49GLZYH" />
         <Providers>
           <ToastProvider>
             {children}
