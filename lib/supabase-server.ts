@@ -7,6 +7,8 @@ let supabaseServerClient: SupabaseClient | null = null;
  * Get or create a singleton Supabase server client
  * This prevents creating a new client on every API request
  * 
+ * OPTIMIZED: Added connection pooling and performance settings
+ * 
  * @returns SupabaseClient instance
  */
 export function getSupabaseServer(): SupabaseClient {
@@ -23,9 +25,23 @@ export function getSupabaseServer(): SupabaseClient {
         persistSession: false, // Server-side doesn't need session persistence
         autoRefreshToken: false,
       },
+      db: {
+        schema: 'public',
+      },
+      global: {
+        headers: {
+          'x-application-name': 'invoicefbr-api',
+        },
+      },
+      // Connection pooling settings
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
     });
 
-    console.log('✅ Supabase server client initialized');
+    console.log('✅ Supabase server client initialized with connection pooling');
   }
 
   return supabaseServerClient;

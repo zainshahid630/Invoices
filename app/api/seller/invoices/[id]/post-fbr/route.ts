@@ -44,6 +44,15 @@ export async function POST(
       return NextResponse.json({ error: 'FBR token not configured. Please add FBR token in Settings.' }, { status: 400 });
     }
 
+    // Get settings to check identifier type preference
+    const { data: settings } = await supabase
+      .from('settings')
+      .select('fbr_identifier_type')
+      .eq('company_id', company_id)
+      .single();
+
+    const identifierType = settings?.fbr_identifier_type || 'NTN';
+
     // Get invoice with items
     const { data: invoice, error: invoiceError } = await supabase
       .from('invoices')
@@ -71,12 +80,32 @@ export async function POST(
     }
 
     // Build FBR payload (same as validation)
-    // Normalize and validate NTN numbers
-    const sellerNTN = normalizeNTN(company.ntn_number || '');
-    if (!sellerNTN.isValid) {
-      return NextResponse.json({
-        error: `Invalid Seller NTN: ${sellerNTN.error}. Please update in Settings.`
-      }, { status: 400 });
+    // Determine seller identifier based on preference
+    let sellerIdentifier = '';
+    
+    if (identifierType === 'CNIC') {
+      // Use CNIC - remove dashes and ensure 13 digits
+      if (!company.cnic_number) {
+        return NextResponse.json({
+          error: 'CNIC is selected but not set in company settings. Please update in Settings.'
+        }, { status: 400 });
+      }
+      const cnicDigits = company.cnic_number.replace(/-/g, '');
+      if (cnicDigits.length !== 13 || !/^\d+$/.test(cnicDigits)) {
+        return NextResponse.json({
+          error: `Invalid Seller CNIC: Must be 13 digits. Current: ${cnicDigits.length} digits. Please update in Settings.`
+        }, { status: 400 });
+      }
+      sellerIdentifier = cnicDigits;
+    } else {
+      // Use NTN - normalize and validate
+      const sellerNTN = normalizeNTN(company.ntn_number || '');
+      if (!sellerNTN.isValid) {
+        return NextResponse.json({
+          error: `Invalid Seller NTN: ${sellerNTN.error}. Please update in Settings.`
+        }, { status: 400 });
+      }
+      sellerIdentifier = sellerNTN.normalized;
     }
 
     const buyerNTN = normalizeNTN(invoice.buyer_ntn_cnic || '');
@@ -89,7 +118,7 @@ export async function POST(
     const fbrPayload = {
       invoiceType: invoice.invoice_type || 'Sale Invoice',
       invoiceDate: invoice.invoice_date,
-      sellerNTNCNIC: sellerNTN.normalized,
+      sellerNTNCNIC: sellerIdentifier,
       sellerBusinessName: company.business_name || company.name || '',
       sellerProvince: company.province || 'Sindh',
       sellerAddress: company.address || '',
@@ -100,25 +129,33 @@ export async function POST(
       buyerRegistrationType: invoice.buyer_registration_type || 'Unregistered',
       invoiceRefNo: invoice.invoice_number || '',
       scenarioId: invoice.scenario || 'SN000',
-      items: items.map((item: any) => ({
-        hsCode: item.hs_code || '0000.0000',
-        productDescription: sanitizeDescription(item.item_name || ''),
-        rate: `${invoice.sales_tax_rate || 0}%`,
-        uoM: item.uom || 'Numbers, pieces, units',
-        quantity: parseFloat(item.quantity.toString()) || 0,
-        totalValues: parseFloat(item.line_total.toString()) || 0,
-        valueSalesExcludingST: parseFloat(item.line_total.toString()) || 0,
-        fixedNotifiedValueOrRetailPrice: 0,
-        salesTaxApplicable: parseFloat(((parseFloat(item.line_total.toString()) * (invoice.sales_tax_rate || 0)) / 100).toFixed(2)),
-        salesTaxWithheldAtSource: 0,
-        extraTax: '',
-        furtherTax: parseFloat(((parseFloat(item.line_total.toString()) * (invoice.further_tax_rate || 0)) / 100).toFixed(2)),
-        sroScheduleNo: '',
-        fedPayable: 0,
-        discount: 0,
-        saleType: 'Goods at standard rate (default)',
-        sroItemSerialNo: ''
-      }))
+      items: items.map((item: any) => {
+        const cleanValue = Number(parseFloat(item.line_total.toString()).toFixed(2));
+        
+        return {
+          hsCode: item.hs_code || '0000.0000',
+          productDescription: sanitizeDescription(item.item_name || ''),
+          rate: `${invoice.sales_tax_rate || 0}%`,
+          uoM: item.uom || 'Numbers, pieces, units',
+          quantity: Number(parseFloat(item.quantity.toString())) || 0,
+          totalValues: cleanValue,
+          valueSalesExcludingST: cleanValue,
+          fixedNotifiedValueOrRetailPrice: 0,
+          salesTaxApplicable: Math.round(
+            (cleanValue * (invoice.sales_tax_rate || 0)) / 100 * 100
+          ) / 100,
+          salesTaxWithheldAtSource: 0,
+          extraTax: '',
+          furtherTax: Math.round(
+            (cleanValue * (invoice.further_tax_rate || 0)) / 100 * 100
+          ) / 100,
+          sroScheduleNo: '',
+          fedPayable: 0,
+          discount: 0,
+          saleType: 'Goods at standard rate (default)',
+          sroItemSerialNo: ''
+        };
+      })
     };
 
     // Call FBR Post API

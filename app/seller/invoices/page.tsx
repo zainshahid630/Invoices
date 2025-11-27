@@ -338,7 +338,8 @@ export default function InvoicesPage() {
     }
   };
 
-  if (isLoading && invoices.length === 0) {
+  // Show initial loading only on first load (no user data yet)
+  if (!user) {
     return (
       <div className="p-6">
         {/* Header */}
@@ -491,7 +492,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 transition-opacity ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-sm text-gray-600">Total Invoices</div>
           <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
@@ -714,6 +715,7 @@ export default function InvoicesPage() {
                       checked={invoices.length > 0 && selectedInvoices.length === invoices.length}
                       onChange={handleSelectAll}
                       className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer pointer-events-none"
+                      disabled={isLoading}
                     />
                   </div>
                 </th>
@@ -744,7 +746,16 @@ export default function InvoicesPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {invoices.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={9} className="px-6 py-12">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+                      <p className="text-gray-500 text-sm">Loading invoices...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : invoices.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
                     {searchTerm || statusFilter !== 'all'

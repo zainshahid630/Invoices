@@ -6,33 +6,85 @@ export function LetterheadTemplate({
   company,
   qrCodeUrl,
   topSpace = 120,
-  showQr = true
+  showQr = true,
+  letterheadTopSpace,
+  letterheadShowQr,
+  isCommercialInvoice = false,
+  commercialHsCode = '',
+  commercialUom = ''
 }: LetterheadTemplateProps) {
+  // Use letterhead-specific props if provided, otherwise use defaults
+  const actualTopSpace = letterheadTopSpace !== undefined ? letterheadTopSpace : topSpace;
+  const actualShowQr = letterheadShowQr !== undefined ? letterheadShowQr : showQr;
+  
+  // Get most frequent HS Code and UOM from items
+  const getMostFrequent = (arr: string[]) => {
+    const frequency: { [key: string]: number } = {};
+    arr.forEach(val => {
+      if (val) frequency[val] = (frequency[val] || 0) + 1;
+    });
+    return Object.keys(frequency).reduce((a, b) =>
+      frequency[a] > frequency[b] ? a : b, arr[0] || ''
+    );
+  };
+
+  const hsCodes = invoice.items.map(item => item.hs_code).filter(Boolean);
+  const uoms = invoice.items.map(item => item.uom).filter(Boolean);
+  const mostFrequentHsCode = hsCodes.length > 0 ? getMostFrequent(hsCodes) : '';
+  const mostFrequentUom = uoms.length > 0 ? getMostFrequent(uoms) : '';
+
+  // Use commercial values if this is a commercial invoice
+  const displayHsCode = isCommercialInvoice ? commercialHsCode : mostFrequentHsCode;
+  const displayUom = isCommercialInvoice ? commercialUom : mostFrequentUom;
+
   return (
     <div className="max-w-4xl mx-auto bg-white invoice-container text-[11px]">
       {/* Space for Pre-printed Letterhead */}
       <div
         className="border-2 border-dashed border-gray-300 print:border-none flex items-center justify-center text-gray-400 print:text-transparent"
-        style={{ height: `${topSpace}mm` }}
+        style={{ height: `${actualTopSpace}mm` }}
       >
         <div className="text-center">
           <p className="text-sm font-semibold">PRE-PRINTED LETTERHEAD AREA</p>
           <p className="text-xs mt-2">Company Name, Address, Contact Info</p>
-          <p className="text-xs">Space: {topSpace}mm</p>
+          <p className="text-xs">Space: {actualTopSpace}mm</p>
         </div>
       </div>
 
+<div className="w-full flex justify-center">
+  {isCommercialInvoice && (
+    <p className="text-xs font-bold text-purple-600 mt-2 text-center">
+      COMMERCIAL INVOICE
+    </p>
+  )}
+</div>
+
       {/* Invoice Details Row */}
+           
       <div className="grid grid-cols-2 gap-4 p-3 text-[10px] border-b border-black">
         <div className="space-y-1">
           <div className="flex">
             <span className="w-24">Invoice No:</span>
-            <span className="font-semibold flex-1 border-b border-gray-400">{invoice.invoice_number}</span>
+            <span className="font-semibold flex-1 border-b border-gray-400">{invoice.invoice_number.replace('CI-','')}</span>
           </div>
-          <div className="flex">
-            <span className="w-24">Buyer&apos;s Name:</span>
-            <span className="font-semibold flex-1">{invoice.buyer_name}</span>
-          </div>
+          {/* {displayHsCode && (
+            <div className="flex">
+              <span className="w-24">HS Code:</span>
+              <span className="font-semibold flex-1">{displayHsCode}</span>
+            </div>
+          )}
+          {displayUom && (
+            <div className="flex">
+              <span className="w-24">UOM:</span>
+              <span className="font-semibold flex-1">{displayUom}</span>
+            </div>
+          )} */}
+          {invoice.buyer_name !== invoice.buyer_business_name && (
+            <div className="flex">
+              <span className="w-24">Buyer&apos;s Name:</span>
+              <span className="font-semibold flex-1">{invoice.buyer_name}</span>
+            </div>
+          )}
           <div className="flex">
             <span className="w-24">M/S:</span>
             <span className="font-semibold flex-1">{invoice.buyer_business_name || '-'}</span>
@@ -41,10 +93,18 @@ export function LetterheadTemplate({
             <span className="w-24">Address:</span>
             <span className="flex-1 text-[9px]">{invoice.buyer_address}</span>
           </div>
-          <div className="flex">
-            <span className="w-24">P.O NO:</span>
-            <span className="font-semibold flex-1 border-b border-gray-400">{invoice.po_number || '-'}</span>
-          </div>
+          {invoice.po_number && (
+            <div className="flex">
+              <span className="w-24">P.O NO:</span>
+              <span className="font-semibold flex-1 border-b border-gray-400">{invoice.po_number}</span>
+            </div>
+          )}
+          {invoice.dc_code && (
+            <div className="flex">
+              <span className="w-24">DC NO:</span>
+              <span className="font-semibold flex-1 border-b border-gray-400">{invoice.dc_code}</span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-1">
@@ -68,6 +128,18 @@ export function LetterheadTemplate({
               <span className="font-semibold flex-1 border-b border-gray-400">{invoice.fbr_invoice_number}</span>
             </div>
           )}
+          {invoice.items[0]?.hs_code && (
+            <div className="flex">
+              <span className="w-32">HS Code:</span>
+              <span className="font-semibold flex-1 border-b border-gray-400">{invoice.items[0].hs_code}</span>
+            </div>
+          )}
+          {invoice.items[0]?.uom && (
+            <div className="flex">
+              <span className="w-32">UOM:</span>
+              <span className="font-semibold flex-1 border-b border-gray-400">{invoice.items[0].uom}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -76,9 +148,8 @@ export function LetterheadTemplate({
         <thead>
           <tr className="border-b-2 border-black">
             <th className="border border-black p-1 w-[8%] text-center">Qty.</th>
-            <th className="border border-black p-1 w-[32%] text-left">Description</th>
+            <th className="border border-black p-1 w-[40%] text-left">Description</th>
             <th className="border border-black p-1 w-[10%] text-center">Rate</th>
-            <th className="border border-black p-1 w-[8%] text-center">Unit</th>
             <th className="border border-black p-1 w-[14%] text-right">
               Amount<br />Excluding Tax<br />Rs.
             </th>
@@ -106,12 +177,11 @@ export function LetterheadTemplate({
                 <td className="border border-black p-1 text-center">{parseFloat(item.quantity.toString())}</td>
                 <td className="border border-black p-1">
                   {item.item_name}
-                  {item.hs_code && <span className="text-[9px] text-gray-600"> (HS: {item.hs_code})</span>}
+                  {/* {item.hs_code && <span className="text-[9px] text-gray-600"> </span>} */}
                 </td>
                 <td className="border border-black p-1 text-right">
                   {parseFloat(item.unit_price.toString()).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
                 </td>
-                <td className="border border-black p-1 text-center">{item.uom}</td>
                 <td className="border border-black p-1 text-right font-semibold">
                   {parseFloat(item.line_total.toString()).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
                 </td>
@@ -130,10 +200,7 @@ export function LetterheadTemplate({
 
           {/* TOTAL Row */}
           <tr className="border-b-2 border-black bg-gray-100 font-bold">
-            <td colSpan={4} className="border border-black p-1 text-center">TOTAL</td>
-            <td className="border border-black p-1 text-right">
-              {parseFloat(invoice.subtotal.toString()).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
-            </td>
+            <td colSpan={4} className="border border-black p-1 text-right">TOTAL</td>
             <td className="border border-black p-1 text-right">
               {parseFloat(invoice.sales_tax_amount.toString()).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
             </td>
@@ -182,7 +249,7 @@ export function LetterheadTemplate({
 
         <div className="flex justify-end items-start gap-10">
           {/* QR Code and FBR Logo */}
-          {showQr && qrCodeUrl && invoice.status === 'fbr_posted' && invoice.fbr_invoice_number && (
+          {!isCommercialInvoice && actualShowQr && qrCodeUrl && invoice.status === 'fbr_posted' && invoice.fbr_invoice_number && (
             <div className="flex flex-col items-center">
               <div className="flex items-center gap-2">
                 <img src={qrCodeUrl} alt="QR Code" className="w-16 h-16 border border-black" />
@@ -203,6 +270,14 @@ export function LetterheadTemplate({
           </div>
         </div>
       </div>
+
+      {/* Notes Section */}
+      {invoice.notes && (
+        <div className="border-t border-gray-300 p-3 bg-gray-50 text-[11px]">
+          <p className="font-bold mb-1">NOTES:</p>
+          <p>{invoice.notes}</p>
+        </div>
+      )}
     </div>
   );
 }

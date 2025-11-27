@@ -194,6 +194,7 @@ export async function POST(request: NextRequest) {
       customer_id,
       invoice_number: custom_invoice_number, // Allow custom invoice number
       po_number, // Purchase Order number
+      dc_code, // Delivery Challan code
       invoice_date,
       invoice_type,
       scenario,
@@ -218,28 +219,28 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
     if (!invoice_date) {
       return NextResponse.json(
         { error: 'Invoice date is required' },
         { status: 400 }
       );
     }
-    
+
     if (!invoice_type) {
       return NextResponse.json(
         { error: 'Invoice type is required' },
         { status: 400 }
       );
     }
-    
+
     if (!items || items.length === 0) {
       return NextResponse.json(
         { error: 'At least one item is required' },
         { status: 400 }
       );
     }
-    
+
     if (!buyer_name || buyer_name.trim() === '') {
       return NextResponse.json(
         { error: 'Buyer name is required' },
@@ -251,7 +252,7 @@ export async function POST(request: NextRequest) {
     const subscriptionStatus = await checkSubscription(company_id);
     if (!subscriptionStatus.isActive) {
       return NextResponse.json(
-        { 
+        {
           error: subscriptionStatus.message || 'Subscription expired',
           subscription_expired: true,
           subscription: subscriptionStatus.subscription
@@ -283,11 +284,11 @@ export async function POST(request: NextRequest) {
 
     // Auto-save manual customer to customers table if not already linked
     let final_customer_id = customer_id;
-    
+
     if (!customer_id && buyer_name) {
       // Check if customer with same NTN/CNIC already exists
       let existingCustomer = null;
-      
+
       if (buyer_ntn_cnic) {
         const { data } = await supabase
           .from('customers')
@@ -297,7 +298,7 @@ export async function POST(request: NextRequest) {
           .single();
         existingCustomer = data;
       }
-      
+
       // If no existing customer found, create new one
       if (!existingCustomer) {
         const { data: newCustomer, error: customerError } = await supabase
@@ -315,7 +316,7 @@ export async function POST(request: NextRequest) {
           })
           .select()
           .single();
-        
+
         if (customerError) {
           console.error('Error creating customer:', customerError);
           return NextResponse.json(
@@ -323,7 +324,7 @@ export async function POST(request: NextRequest) {
             { status: 500 }
           );
         }
-        
+
         if (newCustomer) {
           final_customer_id = newCustomer.id;
           console.log('Auto-saved customer:', newCustomer.id);
@@ -353,6 +354,7 @@ export async function POST(request: NextRequest) {
         customer_id: final_customer_id || null,
         invoice_number,
         po_number: po_number || null,
+        dc_code: dc_code || null,
         invoice_date,
         invoice_type,
         scenario,
@@ -378,7 +380,7 @@ export async function POST(request: NextRequest) {
 
     if (invoiceError) {
       console.error('Error creating invoice:', invoiceError);
-      
+
       // Provide more specific error messages
       let errorMessage = invoiceError.message;
       if (invoiceError.code === '23502') {
@@ -395,7 +397,7 @@ export async function POST(request: NextRequest) {
           errorMessage = `${fieldNames[columnName] || columnName} is required`;
         }
       }
-      
+
       return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 
@@ -404,12 +406,15 @@ export async function POST(request: NextRequest) {
       invoice_id: invoice.id,
       product_id: item.product_id || null,
       item_name: item.item_name,
-      hs_code: item.hs_code,
-      uom: item.uom,
+      hs_code: item.hs_code || '',
+      uom: item.uom || 'Numbers, pieces, units',
+      sale_type: item.sale_type || 'Goods at standard rate (default)',
       unit_price: parseFloat(item.unit_price).toFixed(2),
       quantity: parseFloat(item.quantity).toFixed(2),
       line_total: (parseFloat(item.unit_price) * parseFloat(item.quantity)).toFixed(2),
     }));
+
+    console.log('📦 Creating invoice items:', JSON.stringify(invoiceItems, null, 2));
 
     const { error: itemsError } = await supabase
       .from('invoice_items')

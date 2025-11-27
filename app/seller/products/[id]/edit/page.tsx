@@ -118,137 +118,141 @@ export default function EditProductPage() {
 
         {/* Form */}
         <div className="max-w-3xl">
-        <div className="bg-white shadow rounded-lg p-6">
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Product Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Product Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="name"
-                required
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* HS Code */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                HS Code
-              </label>
-              <input
-                type="text"
-                name="hs_code"
-                value={formData.hs_code}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* UOM and Unit Price */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Unit of Measurement (UOM) <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="uom"
-                  required
-                  value={formData.uom}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="PCS">PCS (Pieces)</option>
-                  <option value="KG">KG (Kilograms)</option>
-                  <option value="LTR">LTR (Liters)</option>
-                  <option value="MTR">MTR (Meters)</option>
-                  <option value="BOX">BOX (Boxes)</option>
-                  <option value="SET">SET (Sets)</option>
-                  <option value="UNIT">UNIT (Units)</option>
-                </select>
+          <div className="bg-white shadow rounded-lg p-6">
+            {error && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+                {error}
               </div>
+            )}
 
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Product Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Unit Price (Rs.) <span className="text-red-500">*</span>
+                  Product Name <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="number"
-                  name="unit_price"
+                  type="text"
+                  name="name"
                   required
-                  min="0"
-                  step="0.01"
-                  value={formData.unit_price}
+                  value={formData.name}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-            </div>
 
-            {/* Warranty */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Warranty (Months)
-              </label>
-              <input
-                type="number"
-                name="warranty_months"
-                min="0"
-                value={formData.warranty_months}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+              {/* HS Code */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  HS Code
+                </label>
+                <input
+                  type="text"
+                  name="hs_code"
+                  value={formData.hs_code}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
 
-            {/* Description */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
-              </label>
-              <textarea
-                name="description"
-                rows={4}
-                value={formData.description}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+              {/* UOM and Unit Price */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Unit of Measurement (UOM) <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="uom"
+                    required
+                    value={formData.uom}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="PCS">PCS (Pieces)</option>
+                    <option value="KG">KG (Kilograms)</option>
+                    <option value="LTR">LTR (Liters)</option>
+                    <option value="MTR">MTR (Meters)</option>
+                    <option value="BOX">BOX (Boxes)</option>
+                    <option value="SET">SET (Sets)</option>
+                    <option value="UNIT">UNIT (Units)</option>
+                  </select>
+                </div>
 
-            {/* Note about stock */}
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-700">
-                <strong>Note:</strong> To adjust stock levels, use the &quot;Adjust Stock&quot; button on the product detail page.
-              </p>
-            </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Unit Price (Rs.) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    onWheel={(e) => e.currentTarget.blur()}
 
-            {/* Submit Buttons */}
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:bg-blue-300"
-              >
-                {submitting ? 'Updating...' : 'Update Product'}
-              </button>
-              <Link
-                href={`/seller/products/${params.id}`}
-                className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-center"
-              >
-                Cancel
-              </Link>
-            </div>
-          </form>
-        </div>
+                    name="unit_price"
+                    required
+                    min="0"
+                    step="0.01"
+                    value={formData.unit_price}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Warranty */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Warranty (Months)
+                </label>
+                <input
+                  type="number"
+                  onWheel={(e) => e.currentTarget.blur()}
+
+                  name="warranty_months"
+                  min="0"
+                  value={formData.warranty_months}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  rows={4}
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Note about stock */}
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <strong>Note:</strong> To adjust stock levels, use the &quot;Adjust Stock&quot; button on the product detail page.
+                </p>
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="flex gap-4">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:bg-blue-300"
+                >
+                  {submitting ? 'Updating...' : 'Update Product'}
+                </button>
+                <Link
+                  href={`/seller/products/${params.id}`}
+                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-center"
+                >
+                  Cancel
+                </Link>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </>

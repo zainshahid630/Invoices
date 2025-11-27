@@ -155,7 +155,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
             href="/register"
             className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
           >
-            Start Free 7-Day Trial
+            Get Started Today
           </Link>
         </div>
 

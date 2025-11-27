@@ -4,7 +4,8 @@ import {
   ModernTemplate, 
   ExcelTemplate, 
   ClassicTemplate, 
-  LetterheadTemplate 
+  LetterheadTemplate,
+  DCTemplate 
 } from '@/components/invoice-templates';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -19,6 +20,7 @@ const sampleInvoice ={
   "id": "sample-id",
   "invoice_number": "INV-2025-00001",
   "po_number": "PO-2025-001",
+  "dc_code": "DC-638",
   "invoice_date": "2025-01-15",
   "invoice_type": "Sales Tax Invoice",
   "scenario": "B2B",
@@ -34,7 +36,7 @@ const sampleInvoice ={
   "further_tax_amount": 3000,
   "total_amount": 121000,
   "buyer_gst_number": "GST-123456",
-  "status": "verified",
+  "status": "fbr_posted",
   "payment_status": "paid",
   "notes": "Thank you for your business. Payment terms: Net 30 days.",
   "created_at": "2025-01-15T10:00:00Z",
@@ -85,7 +87,8 @@ export default function InvoicePreviewPage() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    console.log('Template value:', template);
+  }, [template]);
 
   if (!mounted) {
     return null;
@@ -98,40 +101,61 @@ export default function InvoicePreviewPage() {
           <p className="text-sm text-yellow-800">
             <strong>Preview Mode:</strong> This is a sample invoice with dummy data for template preview purposes.
           </p>
+          <p className="text-xs text-gray-600 mt-1">Template: {template}</p>
         </div>
       </div>
 
-      {template === 'modern' && (
-        <ModernTemplate invoice={sampleInvoice} company={sampleCompany} qrCodeUrl={qrCodeUrl} />
-      )}
-      {template === 'classic' && (
-        <ClassicTemplate invoice={sampleInvoice} company={sampleCompany} qrCodeUrl={qrCodeUrl} />
-      )}
-      {template === 'excel' && (
-        <ExcelTemplate invoice={sampleInvoice} company={sampleCompany} qrCodeUrl={qrCodeUrl} />
-      )}
-      {template === 'letterhead' && (
-        <LetterheadTemplate 
-          invoice={sampleInvoice} 
-          company={sampleCompany} 
-          qrCodeUrl={qrCodeUrl}
-          topSpace={120}
-          showQr={true}
-        />
-      )}
-      {!['modern', 'classic', 'excel', 'letterhead'].includes(template) && (
-        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-12 text-center">
-          <div className="text-6xl mb-4">🎨</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Premium Template</h2>
-          <p className="text-gray-600 mb-6">
-            This is a premium template. Contact Super Admin for access.
-          </p>
-          <div className="bg-gray-100 rounded-lg p-8">
-            <p className="text-sm text-gray-600">Template: <strong>{template}</strong></p>
-            <p className="text-sm text-gray-600 mt-2">Preview available after purchase</p>
+      {(() => {
+        console.log('Rendering template:', template, 'Type:', typeof template);
+        
+        if (template === 'modern') {
+          return <ModernTemplate invoice={sampleInvoice} company={sampleCompany} qrCodeUrl={qrCodeUrl} />;
+        }
+        
+        if (template === 'classic') {
+          return <ClassicTemplate invoice={sampleInvoice} company={sampleCompany} qrCodeUrl={qrCodeUrl}  />;
+        }
+        
+        if (template === 'excel') {
+          return <ExcelTemplate invoice={sampleInvoice} company={sampleCompany} qrCodeUrl={qrCodeUrl} />;
+        }
+        
+        if (template === 'letterhead') {
+          return <LetterheadTemplate 
+            invoice={sampleInvoice} 
+            company={sampleCompany} 
+            qrCodeUrl={qrCodeUrl}
+            topSpace={120}
+            // showQr={true}
+          />;
+        }
+        
+        if (template === 'dc') {
+          console.log('Rendering DC Template');
+          try {
+            return <DCTemplate invoice={sampleInvoice} company={sampleCompany} qrCodeUrl={qrCodeUrl} />;
+          } catch (error) {
+            console.error('Error rendering DC Template:', error);
+            return <div className="text-red-500">Error rendering DC Template: {String(error)}</div>;
+          }
+        }
+        
+        console.log('No template matched, showing premium message');
+        return (
+          <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-12 text-center">
+            <div className="text-6xl mb-4">🎨</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Premium Template</h2>
+            <p className="text-gray-600 mb-6">
+              This is a premium template. Contact Super Admin for access.
+            </p>
+            <div className="bg-gray-100 rounded-lg p-8">
+              <p className="text-sm text-gray-600">Template: <strong>{template}</strong></p>
+              <p className="text-sm text-gray-600 mt-2">Template type: {typeof template}</p>
+              <p className="text-sm text-gray-600 mt-2">Preview available after purchase</p>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

@@ -12,6 +12,7 @@ export interface Invoice {
   id: string;
   invoice_number: string;
   po_number: string;
+  dc_code?: string;
   invoice_date: string;
   invoice_type: string;
   scenario: string;
@@ -50,9 +51,14 @@ export interface InvoiceTemplateProps {
   invoice: Invoice;
   company: Company | null;
   qrCodeUrl: string;
+  isCommercialInvoice?: boolean;
+  commercialHsCode?: string;
+  commercialUom?: string;
 }
 
 export interface LetterheadTemplateProps extends InvoiceTemplateProps {
   topSpace?: number;
   showQr?: boolean;
+  letterheadTopSpace?: number;
+  letterheadShowQr?: boolean;
 }

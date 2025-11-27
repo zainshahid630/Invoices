@@ -12,6 +12,7 @@ interface Company {
   address: string;
   ntn_number: string;
   gst_number: string;
+  cnic_number: string;
   fbr_token: string;
   logo_url: string;
   province: string;
@@ -33,6 +34,7 @@ interface Settings {
   default_hs_code?: string;
   letterhead_top_space?: number;
   letterhead_show_qr?: boolean;
+  fbr_identifier_type?: string;
   other_settings: any;
 }
 
@@ -63,6 +65,7 @@ export default function SettingsPage() {
     address: '',
     ntn_number: '',
     gst_number: '',
+    cnic_number: '',
     fbr_token: '',
     logo_url: '',
     province: '',
@@ -82,6 +85,7 @@ export default function SettingsPage() {
     default_items_per_page: 10,
     letterhead_top_space: 120,
     letterhead_show_qr: true,
+    fbr_identifier_type: 'NTN',
   });
 
   const [whatsappForm, setWhatsappForm] = useState({
@@ -167,6 +171,7 @@ export default function SettingsPage() {
         address: company.address || '',
         ntn_number: company.ntn_number || '',
         gst_number: company.gst_number || '',
+        cnic_number: company.cnic_number || '',
         fbr_token: company.fbr_token || '',
         logo_url: company.logo_url || '',
         province: company.province || '',
@@ -190,6 +195,7 @@ export default function SettingsPage() {
         default_items_per_page: settings.default_items_per_page || 10,
         letterhead_top_space: settings.letterhead_top_space ?? settings.other_settings?.letterhead_top_space ?? 120,
         letterhead_show_qr: settings.letterhead_show_qr ?? settings.other_settings?.letterhead_show_qr ?? true,
+        fbr_identifier_type: settings.fbr_identifier_type || 'NTN',
       });
 
       // Load WhatsApp settings
@@ -481,6 +487,26 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                  CNIC Number
+                </label>
+                <input
+                  type="text"
+                  value={companyForm.cnic_number}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9-]/g, ''); // only digits and dashes
+                    setCompanyForm({ ...companyForm, cnic_number: value });
+                  }}
+                  placeholder="XXXXX-XXXXXXX-X"
+                  maxLength={15}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Format: 13 digits with dashes (e.g., 12345-1234567-1)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Province <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -609,6 +635,8 @@ export default function SettingsPage() {
                 </label>
                 <input
                   type="number"
+                  onWheel={(e) => e.currentTarget.blur()}
+
                   value={settingsForm.invoice_counter}
                   onChange={(e) => setSettingsForm({ ...settingsForm, invoice_counter: parseInt(e.target.value) })}
                   required
@@ -677,6 +705,8 @@ export default function SettingsPage() {
                 </label>
                 <input
                   type="number"
+                  onWheel={(e) => e.currentTarget.blur()}
+
                   step="0.01"
                   value={settingsForm.default_sales_tax_rate}
                   onChange={(e) => setSettingsForm({ ...settingsForm, default_sales_tax_rate: parseFloat(e.target.value) })}
@@ -696,6 +726,8 @@ export default function SettingsPage() {
                 </label>
                 <input
                   type="number"
+                  onWheel={(e) => e.currentTarget.blur()}
+
                   step="0.01"
                   value={settingsForm.default_further_tax_rate}
                   onChange={(e) => setSettingsForm({ ...settingsForm, default_further_tax_rate: parseFloat(e.target.value) })}
@@ -1364,6 +1396,8 @@ export default function SettingsPage() {
                           </label>
                           <input
                             type="number"
+                            onWheel={(e) => e.currentTarget.blur()}
+
                             value={emailForm.smtp_port}
                             onChange={(e) => setEmailForm({ ...emailForm, smtp_port: parseInt(e.target.value) })}
                             required
@@ -1637,6 +1671,24 @@ export default function SettingsPage() {
             {/* Change Password */}
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Change Password</h3>
+              
+              {/* Demo Account Notice */}
+              {companyId === '63e5c4ca-2b3b-45eb-9261-3789e5fb9c39' && (
+                <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4 mb-4">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🔒</span>
+                    <div>
+                      <p className="text-sm font-semibold text-yellow-900 mb-1">
+                        Demo Account - Password Change Disabled
+                      </p>
+                      <p className="text-sm text-yellow-800">
+                        This is a demo account. Password changes are disabled to maintain demo access for all users.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <form onSubmit={handleChangePassword}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="md:col-span-2">
@@ -1648,7 +1700,8 @@ export default function SettingsPage() {
                       value={passwordForm.current_password}
                       onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
                       required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      disabled={companyId === '63e5c4ca-2b3b-45eb-9261-3789e5fb9c39'}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     />
                   </div>
 
@@ -1662,7 +1715,8 @@ export default function SettingsPage() {
                       onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
                       required
                       minLength={6}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      disabled={companyId === '63e5c4ca-2b3b-45eb-9261-3789e5fb9c39'}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Minimum 6 characters
@@ -1679,7 +1733,8 @@ export default function SettingsPage() {
                       onChange={(e) => setPasswordForm({ ...passwordForm, confirm_password: e.target.value })}
                       required
                       minLength={6}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      disabled={companyId === '63e5c4ca-2b3b-45eb-9261-3789e5fb9c39'}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -1687,7 +1742,8 @@ export default function SettingsPage() {
                 <div className="mt-6 flex justify-end">
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    disabled={companyId === '63e5c4ca-2b3b-45eb-9261-3789e5fb9c39'}
+                    className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
                     Change Password
                   </button>
@@ -1843,7 +1899,35 @@ export default function SettingsPage() {
                             </div>
                           </div>
                         )}
-                        {!['modern', 'classic', 'excel'].includes(template.template_key) && (
+                        {template.template_key === 'dc' && (
+                          <div>
+                            <div className="bg-orange-500 h-1 mb-2"></div>
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="text-xs font-bold">Company Name</div>
+                              <div className="text-right">
+                                <div className="text-xs font-bold">SALES TAX INVOICE</div>
+                                <div className="text-xs border-t border-b border-gray-300 py-0.5 mt-1">INV-465</div>
+                                <div className="text-xs">DC No: 638</div>
+                              </div>
+                            </div>
+                            <div className="text-xs mb-2">
+                              <div className="font-bold">BILL TO</div>
+                              <div className="text-gray-600">Customer Name</div>
+                            </div>
+                            <div className="bg-orange-500 text-white text-xs p-1 mb-1">
+                              <div className="flex justify-between">
+                                <span>DESCRIPTION</span>
+                                <span>TOTAL</span>
+                              </div>
+                            </div>
+                            <div className="space-y-0.5">
+                              <div className="h-1.5 bg-gray-200 rounded w-full"></div>
+                              <div className="h-1.5 bg-gray-100 rounded w-full"></div>
+                            </div>
+                            <div className="bg-orange-500 h-1 mt-2"></div>
+                          </div>
+                        )}
+                        {!['modern', 'classic', 'excel', 'dc'].includes(template.template_key) && (
                           <div className="text-center py-4">
                             <div className="text-2xl mb-2">🎨</div>
                             <div className="text-xs text-gray-600">Click to preview</div>
@@ -1935,7 +2019,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="p-6">
                     <iframe
-                      src={`/seller/invoices/preview?template=${selectedTemplatePreview}`}
+                      src={`/preview/invoice?template=${selectedTemplatePreview}`}
                       className="w-full h-[600px] border border-gray-300 rounded"
                       title="Template Preview"
                     />
@@ -1958,6 +2042,8 @@ export default function SettingsPage() {
                   </label>
                   <input
                     type="number"
+                    onWheel={(e) => e.currentTarget.blur()}
+
                     min="0"
                     max="180"
                     value={settingsForm.letterhead_top_space || 120}
@@ -2059,6 +2145,57 @@ export default function SettingsPage() {
                 </select>
               </div>
 
+              {/* FBR Identifier Type */}
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">FBR Settings</h3>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Identifier Type for FBR Invoice Posting
+                  </label>
+                  <div className="flex items-center gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="fbr_identifier_type"
+                        value="NTN"
+                        checked={settingsForm.fbr_identifier_type === 'NTN'}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, fbr_identifier_type: e.target.value })}
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Use NTN</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="fbr_identifier_type"
+                        value="CNIC"
+                        checked={settingsForm.fbr_identifier_type === 'CNIC'}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, fbr_identifier_type: e.target.value })}
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Use CNIC</span>
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-3">
+                    Choose which identifier to use when posting invoices to FBR. Make sure the selected identifier is filled in Company Information.
+                  </p>
+                  <div className="mt-3 text-xs text-gray-600">
+                    <div className="flex items-start gap-2">
+                      <span className="font-semibold">Current NTN:</span>
+                      <span className={companyForm.ntn_number ? 'text-green-600' : 'text-red-600'}>
+                        {companyForm.ntn_number || 'Not set'}
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-2 mt-1">
+                      <span className="font-semibold">Current CNIC:</span>
+                      <span className={companyForm.cnic_number ? 'text-green-600' : 'text-red-600'}>
+                        {companyForm.cnic_number || 'Not set'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Notifications */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Notifications</h3>
@@ -2084,7 +2221,11 @@ export default function SettingsPage() {
 
               <div className="flex justify-end pt-4">
                 <button
-                  onClick={handleSaveCompany}
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    await handleSaveCompany(e);
+                    await handleSaveSettings();
+                  }}
                   disabled={saving}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
                 >

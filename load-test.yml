@@ -1,0 +1,46 @@
+config:
+  target: "https://invoicefbr.com"
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    # Ramp up phase
+    - duration: 120
+      arrivalRate: 5
+      rampTo: 50
+      name: "Ramp up load"
+    # Sustained load phase
+    - duration: 180
+      arrivalRate: 50
+      name: "Sustained load"
+    # Spike test
+    - duration: 60
+      arrivalRate: 100
+      name: "Spike test"
+  processor: "./load-test-processor.js"
+
+scenarios:
+  - name: "Homepage Visit"
+    weight: 40
+    flow:
+      - get:
+          url: "/"
+          
+  - name: "Blog Browse"
+    weight: 30
+    flow:
+      - get:
+          url: "/blog"
+      - think: 2
+      - get:
+          url: "/blog/{{ $randomString() }}"
+          
+  - name: "Invoice Creation Flow"
+    weight: 30
+    flow:
+      - get:
+          url: "/seller/create-invoice"
+      - think: 3
+      - get:
+          url: "/api/health"

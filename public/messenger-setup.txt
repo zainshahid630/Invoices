@@ -1,0 +1,27 @@
+# 💬 Facebook Messenger Ad Setup (Revised)
+
+Use these simpler, direct questions to start conversations.
+
+### 1. Greeting
+**Text**:
+"Hi! 👋 Thanks for contacting InvoiceFBR. We provide a simple FBR invoicing solution. How can we help you?"
+
+### 2. Frequently Asked Questions (Automated Responses)
+
+**Question #1**:
+"What is the price of the software?"
+**Answer**:
+"We have a Limited Time Offer! Get a Lifetime License for just **25,000 PKR**. The yearly renewal fee is only 1,500 PKR. No hidden charges!"
+
+**Question #2**:
+"Is this software FBR compliant?"
+**Answer**:
+"Yes, it is 100% FBR compliant. We have passed all FBR test scenarios, so you can issue verified invoices with QR codes instantly."
+
+**Question #3**:
+"How can I get this installed?"
+**Answer**:
+"It's very easy! We offer **Remote Support**, so we can set everything up for you online without any visits. Just reply here or call us to get started."
+
+### 3. Messenger Call Invitation
+**Recommendation**: **ENABLE** this feature.

@@ -91,7 +91,8 @@ export default function ProductsPage() {
     initialItemsPerPage: 10,
   });
 
-  if (isLoading || !user) {
+  // Show initial loading only on first load (no user data yet)
+  if (!user) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
@@ -122,7 +123,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 transition-opacity ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
           <div className="bg-white p-4 rounded-lg shadow">
             <p className="text-sm text-gray-600">Total Products</p>
             <p className="text-2xl font-bold text-gray-900">{products.length}</p>
@@ -167,7 +168,16 @@ export default function ProductsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProducts.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+                      <p className="text-gray-500 text-sm">Loading products...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredProducts.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                     {searchTerm ? 'No products found matching your search.' : 'No products yet. Add your first product!'}

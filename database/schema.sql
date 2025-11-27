@@ -172,6 +172,7 @@ CREATE TABLE invoice_items (
   item_name VARCHAR(255) NOT NULL,
   hs_code VARCHAR(50),
   uom VARCHAR(50),
+  sale_type VARCHAR(255) DEFAULT 'Goods at standard rate (default)',
   unit_price DECIMAL(10, 2) NOT NULL,
   quantity DECIMAL(10, 2) NOT NULL,
   line_total DECIMAL(10, 2) NOT NULL,

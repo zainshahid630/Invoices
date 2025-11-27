@@ -19,7 +19,7 @@ export const blogPosts: BlogPost[] = [
     slug: "fbr-digital-invoice-compliance-guide-2024",
     title: "Complete Guide to FBR Digital Invoice Compliance in 2024",
     excerpt: "Everything Pakistani businesses need to know about FBR's digital invoice requirements, penalties for non-compliance, and how to get started.",
-    image: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1200&h=630&fit=crop",
+    image: "/images/landing/signup.jpg",
     imageAlt: "Business documents and compliance paperwork on desk",
     content: `
 # Complete Guide to FBR Digital Invoice Compliance in 2024
@@ -116,7 +116,7 @@ Ready to simplify your FBR compliance? Try InvoiceFBR free for 7 days.
     slug: "10-invoicing-mistakes-pakistani-businesses",
     title: "10 Common Invoicing Mistakes Pakistani Businesses Make",
     excerpt: "Avoid these costly invoicing errors that can hurt your cash flow, damage client relationships, and cause FBR compliance issues.",
-    image: "https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=1200&h=630&fit=crop",
+    image: "/images/landing/business.jpg",
     imageAlt: "Warning sign and business documents showing common mistakes",
     content: `
 # 10 Common Invoicing Mistakes Pakistani Businesses Make
@@ -212,7 +212,7 @@ Start your free trial today and invoice like a pro!
     slug: "automate-invoice-workflow-save-time",
     title: "How to Automate Your Invoice Workflow and Save 10 Hours Per Week",
     excerpt: "Learn how automation can transform your invoicing process, reduce errors, and free up time for growing your business.",
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=630&fit=crop",
+    image: "/images/landing/charts.jpg",
     imageAlt: "Automated workflow dashboard with charts and analytics",
     content: `
 # How to Automate Your Invoice Workflow and Save 10 Hours Per Week
@@ -338,7 +338,7 @@ Automation isn't just about saving time—it's about reducing errors, improving 
     slug: "gst-sales-tax-guide-pakistan-businesses",
     title: "GST and Sales Tax Guide for Pakistani Businesses",
     excerpt: "A comprehensive guide to understanding GST, sales tax rates, registration requirements, and filing procedures in Pakistan.",
-    image: "https://images.unsplash.com/photo-1554224154-22dec7ec8818?w=1200&h=630&fit=crop",
+    image: "/images/landing/invoice.jpg",
     imageAlt: "Tax documents and calculator for GST calculation",
     content: `
 # GST and Sales Tax Guide for Pakistani Businesses
@@ -507,7 +507,7 @@ GST compliance is essential for business success in Pakistan. With proper unders
     slug: "improve-cash-flow-faster-invoice-payments",
     title: "5 Proven Strategies to Get Paid Faster",
     excerpt: "Practical tips to improve your cash flow by reducing payment delays and encouraging customers to pay invoices on time.",
-    image: "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=1200&h=630&fit=crop",
+    image: "/images/landing/tech.jpg",
     imageAlt: "Money and payment processing showing cash flow improvement",
     content: `
 # 5 Proven Strategies to Get Paid Faster
@@ -693,7 +693,7 @@ Getting paid faster isn't about being aggressive—it's about being professional
     slug: "small-business-accounting-tips-pakistan",
     title: "Essential Accounting Tips for Small Businesses in Pakistan",
     excerpt: "Master the basics of small business accounting, from bookkeeping to financial reporting, tailored for Pakistani entrepreneurs.",
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=630&fit=crop",
+    image: "/images/landing/analytics.jpg",
     imageAlt: "Accounting ledger and financial reports for small business",
     content: `
 # Essential Accounting Tips for Small Businesses in Pakistan
@@ -986,7 +986,7 @@ Good accounting practices are essential for business success. Start with the bas
     slug: "reduce-accounting-errors-digital-invoicing",
     title: "How Digital Invoicing Can Reduce Accounting Errors by 95%",
     excerpt: "Manual invoices lead to costly mistakes. Learn how digital invoicing eliminates errors, saves time, and ensures accuracy in your business accounting.",
-    image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&h=630&fit=crop",
+    image: "/images/landing/tracking.jpg",
     imageAlt: "Digital invoice on computer screen showing error-free calculations",
     content: `
 # How Digital Invoicing Can Reduce Accounting Errors by 95%
@@ -1374,7 +1374,7 @@ With a 95% error reduction rate and significant time savings, digital invoicing 
     slug: "automate-billing-process-benefits",
     title: "Benefits of Automating Your Billing Process in 2024",
     excerpt: "Manual billing wastes time and money. Discover how automation speeds up payments, reduces errors, and improves customer satisfaction.",
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=630&fit=crop",
+    image: "/images/landing/analytics.jpg",
     imageAlt: "Automated billing system dashboard showing payment processing",
     content: `
 # Benefits of Automating Your Billing Process in 2024

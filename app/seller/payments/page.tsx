@@ -248,7 +248,7 @@ export default function PaymentsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 transition-opacity ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="text-sm text-green-600 font-medium">Total Received</div>
           <div className="text-2xl font-bold text-green-900">PKR {totalReceived.toFixed(2)}</div>
@@ -291,34 +291,44 @@ export default function PaymentsPage() {
 
       {/* Payments Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        {isLoading ? (
-          <div className="p-12 text-center">
-            <div className="text-4xl mb-4">⏳</div>
-            <div className="text-lg text-gray-600">Loading payments...</div>
-          </div>
-        ) : filteredPayments.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="text-4xl mb-4">💰</div>
-            <div className="text-lg text-gray-600 mb-2">No payments found</div>
-            <p className="text-gray-500">Record your first payment to get started</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {isLoading ? (
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <td colSpan={8} className="px-6 py-12">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+                      <p className="text-gray-500 text-sm">Loading payments...</p>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedItems.map((payment) => (
+              ) : filteredPayments.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center">
+                    <div className="text-4xl mb-4">💰</div>
+                    <div className="text-lg text-gray-600 mb-2">No payments found</div>
+                    <p className="text-gray-500">
+                      {searchTerm || filterType !== 'all' 
+                        ? 'No payments match your search criteria' 
+                        : 'Record your first payment to get started'}
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                paginatedItems.map((payment) => (
                   <tr key={payment.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm text-gray-700">
                       {new Date(payment.payment_date).toLocaleDateString()}
@@ -357,20 +367,22 @@ export default function PaymentsPage() {
                       </button>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-            {/* Pagination */}
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={filteredPayments.length}
-              itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={setItemsPerPage}
-            />
-          </div>
+        {/* Pagination */}
+        {filteredPayments.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredPayments.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         )}
       </div>
 
@@ -462,6 +474,8 @@ export default function PaymentsPage() {
                     </label>
                     <input
                       type="number"
+                      onWheel={(e) => e.currentTarget.blur()}
+
                       step="0.01"
                       value={formData.amount}
                       onChange={(e) => setFormData({ ...formData, amount: e.target.value })}

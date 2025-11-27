@@ -23,15 +23,23 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
 
+  // Remove console logs in production
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
+
   // Image optimization
   images: {
-    domains: ['images.unsplash.com'],
+    domains: [], // All images now served locally
     formats: ['image/avif', 'image/webp'],
-    minimumCacheTTL: 60,
+    minimumCacheTTL: 31536000, // Cache for 1 year
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    unoptimized: false, // Ensure optimization is enabled
   },
 
   // Headers for SEO, security, and caching
@@ -72,8 +80,51 @@ const nextConfig = {
           },
         ],
       },
+      // Cache all image files
       {
         source: '/:path*.{jpg,jpeg,png,gif,svg,webp,avif,ico}',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Expires',
+            value: new Date(Date.now() + 31536000000).toUTCString(),
+          },
+        ],
+      },
+      // Cache Next.js optimized images
+      {
+        source: '/_next/image',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Expires',
+            value: new Date(Date.now() + 31536000000).toUTCString(),
+          },
+        ],
+      },
+      // Cache static files (fonts, etc.)
+      {
+        source: '/:path*.{woff,woff2,ttf,otf,eot}',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Expires',
+            value: new Date(Date.now() + 31536000000).toUTCString(),
+          },
+        ],
+      },
+      // Cache Next.js static assets
+      {
+        source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',

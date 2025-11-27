@@ -73,25 +73,33 @@ export async function GET(
       buyerRegistrationType: invoice.buyer_registration_type || 'Unregistered',
       invoiceRefNo: invoice.invoice_number || '',
       scenarioId: invoice.scenario || 'SN000',
-      items: items.map((item: any) => ({
-        hsCode: item.hs_code || '0000.0000',
-        productDescription: (item.item_name || '').replace(/"/g, "'"),
-        rate: `${invoice.sales_tax_rate || 0}%`,
-        uoM: item.uom || 'Numbers, pieces, units',
-        quantity: parseFloat(item.quantity.toString()) || 0,
-        totalValues: parseFloat(item.line_total.toString()) || 0,
-        valueSalesExcludingST: parseFloat(item.line_total.toString()) || 0,
-        fixedNotifiedValueOrRetailPrice: 0,
-        salesTaxApplicable: parseFloat(((parseFloat(item.line_total.toString()) * (invoice.sales_tax_rate || 0)) / 100).toFixed(2)),
-        salesTaxWithheldAtSource: 0,
-        extraTax: '',
-        furtherTax: parseFloat(((parseFloat(item.line_total.toString()) * (invoice.further_tax_rate || 0)) / 100).toFixed(2)),
-        sroScheduleNo: '',
-        fedPayable: 0,
-        discount: 0,
-        saleType: 'Goods at standard rate (default)',
-        sroItemSerialNo: ''
-      }))
+      items: items.map((item: any) => {
+        const cleanValue = Number(parseFloat(item.line_total.toString()).toFixed(2));
+        
+        return {
+          hsCode: item.hs_code || '0000.0000',
+          productDescription: (item.item_name || '').replace(/"/g, "'"),
+          rate: `${invoice.sales_tax_rate || 0}%`,
+          uoM: item.uom || 'Numbers, pieces, units',
+          quantity: Number(parseFloat(item.quantity.toString())) || 0,
+          totalValues: cleanValue,
+          valueSalesExcludingST: cleanValue,
+          fixedNotifiedValueOrRetailPrice: 0,
+          salesTaxApplicable: Math.round(
+            (cleanValue * (invoice.sales_tax_rate || 0)) / 100 * 100
+          ) / 100,
+          salesTaxWithheldAtSource: 0,
+          extraTax: '',
+          furtherTax: Math.round(
+            (cleanValue * (invoice.further_tax_rate || 0)) / 100 * 100
+          ) / 100,
+          sroScheduleNo: '',
+          fedPayable: 0,
+          discount: 0,
+          saleType: 'Goods at standard rate (default)',
+          sroItemSerialNo: ''
+        };
+      })
     };
 
     return NextResponse.json({

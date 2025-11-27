@@ -44,7 +44,7 @@ export default function JazzCashPaymentExample() {
       if (data.success) {
         // Step 2: Open payment in new tab
         const newWindow = window.open('', '_blank');
-        
+
         if (newWindow) {
           // Create form in new window and submit to JazzCash
           const form = newWindow.document.createElement('form');
@@ -104,6 +104,8 @@ export default function JazzCashPaymentExample() {
           </label>
           <input
             type="number"
+            onWheel={(e) => e.currentTarget.blur()}
+
             required
             min="1"
             step="0.01"
@@ -189,7 +191,7 @@ export default function JazzCashPaymentExample() {
             <strong>💡 New Tab:</strong> Payment opens in a new tab. Please allow pop-ups if prompted.
           </p>
         </div>
-        
+
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
           <p className="text-sm text-yellow-800">
             <strong>Test Mode:</strong> Use test card 4111 1111 1111 1111 with any future expiry and CVV.
@@ -201,7 +203,7 @@ export default function JazzCashPaymentExample() {
       <div className="mt-6">
         <h2 className="text-lg font-semibold mb-2">Code Example</h2>
         <pre className="bg-gray-100 p-4 rounded-md overflow-x-auto text-xs">
-{`// Initiate payment
+          {`// Initiate payment
 const response = await fetch('/api/jazzcash/initiate', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },

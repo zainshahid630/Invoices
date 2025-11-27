@@ -1,0 +1,26 @@
+config:
+  target: "https://invoicefbr.com"
+  phases:
+    # Start small
+    - duration: 30
+      arrivalRate: 10
+      name: "Light load"
+    # Increase gradually
+    - duration: 60
+      arrivalRate: 10
+      rampTo: 50
+      name: "Medium load"
+    # Heavy load
+    - duration: 60
+      arrivalRate: 50
+      rampTo: 100
+      name: "Heavy load"
+
+scenarios:
+  - name: "Basic User Journey"
+    flow:
+      - get:
+          url: "/"
+      - think: 1
+      - get:
+          url: "/blog"

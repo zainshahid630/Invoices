@@ -71,7 +71,7 @@ export default function FBRSandboxPage() {
       const response = await fetch(`/api/seller/settings?company_id=${companyId}`);
       const data = await response.json();
 
-      if (response.ok && data.company) {
+      if (response.ok && data.company && data.settings) {
         // Update token if available
         if (data.company.fbr_token) {
           setToken(data.company.fbr_token);
@@ -79,16 +79,35 @@ export default function FBRSandboxPage() {
 
         // Update payload with company details
         setPayload(prev => {
-          // Normalize NTN before setting
-          let normalizedNTN = prev.sellerNTNCNIC;
-          if (data.company.ntn_number) {
-            const ntnResult = normalizeNTN(data.company.ntn_number);
-            if (ntnResult.isValid) {
-              normalizedNTN = ntnResult.normalized;
+          // Check which identifier type to use
+          const identifierType = data.settings.fbr_identifier_type || 'NTN';
+          let sellerIdentifier = prev.sellerNTNCNIC;
+
+          if (identifierType === 'CNIC') {
+            // Use CNIC - remove dashes and ensure 13 digits
+            if (data.company.cnic_number) {
+              const cnicDigits = data.company.cnic_number.replace(/-/g, '');
+              if (cnicDigits.length === 13 && /^\d+$/.test(cnicDigits)) {
+                sellerIdentifier = cnicDigits;
+              } else {
+                console.warn('Invalid CNIC: Must be 13 digits after removing dashes. Current:', cnicDigits);
+                // Fallback to original value
+                sellerIdentifier = data.company.cnic_number;
+              }
             } else {
-              console.warn('Invalid company NTN:', ntnResult.error);
-              // Use original value if normalization fails
-              normalizedNTN = data.company.ntn_number;
+              console.warn('CNIC selected but not set in company settings');
+            }
+          } else {
+            // Use NTN - normalize to 7 digits
+            if (data.company.ntn_number) {
+              const ntnResult = normalizeNTN(data.company.ntn_number);
+              if (ntnResult.isValid) {
+                sellerIdentifier = ntnResult.normalized;
+              } else {
+                console.warn('Invalid company NTN:', ntnResult.error);
+                // Use original value if normalization fails
+                sellerIdentifier = data.company.ntn_number;
+              }
             }
           }
 
@@ -96,7 +115,7 @@ export default function FBRSandboxPage() {
             ...prev,
             sellerBusinessName: data.company.business_name || data.company.name || prev.sellerBusinessName,
             sellerProvince: data.company.province || prev.sellerProvince,
-            sellerNTNCNIC: normalizedNTN,
+            sellerNTNCNIC: sellerIdentifier,
             sellerAddress: data.company.address || prev.sellerAddress,
           };
         });
@@ -114,18 +133,33 @@ export default function FBRSandboxPage() {
     setResponse(null);
 
     try {
-      // Normalize only seller NTN (buyer NTN is used as-is for testing)
-      const sellerNTN = normalizeNTN(payload.sellerNTNCNIC);
-      if (!sellerNTN.isValid) {
-        setError(`Invalid Seller NTN: ${sellerNTN.error}`);
-        setLoading(false);
-        return;
+      // Validate seller identifier (NTN or CNIC)
+      let sellerIdentifier = payload.sellerNTNCNIC;
+      let identifierInfo = '';
+
+      // Check if it's CNIC (13 digits) or NTN (7 digits)
+      const digitsOnly = payload.sellerNTNCNIC.replace(/-/g, '');
+      
+      if (digitsOnly.length === 13 && /^\d+$/.test(digitsOnly)) {
+        // It's a CNIC - use digits only
+        sellerIdentifier = digitsOnly;
+        identifierInfo = `CNIC: ${payload.sellerNTNCNIC} → ${digitsOnly}`;
+      } else {
+        // It's an NTN - normalize it
+        const sellerNTN = normalizeNTN(payload.sellerNTNCNIC);
+        if (!sellerNTN.isValid) {
+          setError(`Invalid Seller Identifier: ${sellerNTN.error}`);
+          setLoading(false);
+          return;
+        }
+        sellerIdentifier = sellerNTN.normalized;
+        identifierInfo = `NTN: ${payload.sellerNTNCNIC} → ${sellerNTN.normalized}`;
       }
 
-      // Create payload with normalized seller NTN only
+      // Create payload with normalized seller identifier
       const normalizedPayload = {
         ...payload,
-        sellerNTNCNIC: sellerNTN.normalized,
+        sellerNTNCNIC: sellerIdentifier,
         // buyerNTNCNIC is used as-is from payload
       };
 
@@ -139,11 +173,11 @@ export default function FBRSandboxPage() {
       });
 
       const data = await res.json();
-      setResponse({ 
-        status: res.status, 
+      setResponse({
+        status: res.status,
         data,
         normalizedNTNs: {
-          seller: `${payload.sellerNTNCNIC} → ${sellerNTN.normalized}`,
+          seller: identifierInfo,
           buyer: `${payload.buyerNTNCNIC} (unchanged)`
         }
       });
@@ -164,20 +198,37 @@ export default function FBRSandboxPage() {
     setResponse(null);
 
     try {
-      // Normalize only seller NTN (buyer NTN is used as-is for testing)
-      const sellerNTN = normalizeNTN(payload.sellerNTNCNIC);
-      if (!sellerNTN.isValid) {
-        setError(`Invalid Seller NTN: ${sellerNTN.error}`);
-        setLoading(false);
-        return;
+      // Validate seller identifier (NTN or CNIC)
+      let sellerIdentifier = payload.sellerNTNCNIC;
+      let identifierInfo = '';
+
+      // Check if it's CNIC (13 digits) or NTN (7 digits)
+      const digitsOnly = payload.sellerNTNCNIC.replace(/-/g, '');
+      
+      if (digitsOnly.length === 13 && /^\d+$/.test(digitsOnly)) {
+        // It's a CNIC - use digits only
+        sellerIdentifier = digitsOnly;
+        identifierInfo = `CNIC: ${payload.sellerNTNCNIC} → ${digitsOnly}`;
+      } else {
+        // It's an NTN - normalize it
+        const sellerNTN = normalizeNTN(payload.sellerNTNCNIC);
+        if (!sellerNTN.isValid) {
+          setError(`Invalid Seller Identifier: ${sellerNTN.error}`);
+          setLoading(false);
+          return;
+        }
+        sellerIdentifier = sellerNTN.normalized;
+        identifierInfo = `NTN: ${payload.sellerNTNCNIC} → ${sellerNTN.normalized}`;
       }
 
-      // Create payload with normalized seller NTN only
+      // Create payload with normalized seller identifier
       const normalizedPayload = {
         ...payload,
-        sellerNTNCNIC: sellerNTN.normalized,
+        sellerNTNCNIC: sellerIdentifier,
         // buyerNTNCNIC is used as-is from payload
       };
+
+      console.log(normalizedPayload, 'normalizedPayload')
 
       const res = await fetch('https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata_sb', {
         method: 'POST',
@@ -189,11 +240,11 @@ export default function FBRSandboxPage() {
       });
 
       const data = await res.json();
-      setResponse({ 
-        status: res.status, 
+      setResponse({
+        status: res.status,
         data,
         normalizedNTNs: {
-          seller: `${payload.sellerNTNCNIC} → ${sellerNTN.normalized}`,
+          seller: identifierInfo,
           buyer: `${payload.buyerNTNCNIC} (unchanged)`
         }
       });
@@ -227,28 +278,38 @@ export default function FBRSandboxPage() {
       };
 
       try {
-        // Normalize only seller NTN (buyer NTN is used as-is for testing)
-        const sellerNTN = normalizeNTN(testPayload.sellerNTNCNIC);
+        // Validate seller identifier (NTN or CNIC)
+        let sellerIdentifier = testPayload.sellerNTNCNIC;
+        const digitsOnly = testPayload.sellerNTNCNIC.replace(/-/g, '');
+        
+        if (digitsOnly.length === 13 && /^\d+$/.test(digitsOnly)) {
+          // It's a CNIC - use digits only
+          sellerIdentifier = digitsOnly;
+        } else {
+          // It's an NTN - normalize it
+          const sellerNTN = normalizeNTN(testPayload.sellerNTNCNIC);
 
-        if (!sellerNTN.isValid) {
-          results.push({
-            scenario: scenario.name,
-            scenarioId: scenario.id,
-            status: 'INVALID_NTN',
-            success: false,
-            error: `Invalid Seller NTN: ${sellerNTN.error}`
-          });
-          continue;
+          if (!sellerNTN.isValid) {
+            results.push({
+              scenario: scenario.name,
+              scenarioId: scenario.id,
+              status: 'INVALID_IDENTIFIER',
+              success: false,
+              error: `Invalid Seller Identifier: ${sellerNTN.error}`
+            });
+            continue;
+          }
+          sellerIdentifier = sellerNTN.normalized;
         }
 
-        // Create payload with normalized seller NTN only
+        // Create payload with normalized seller identifier
         const normalizedPayload = {
           ...testPayload,
-          sellerNTNCNIC: sellerNTN.normalized,
+          sellerNTNCNIC: sellerIdentifier,
           // buyerNTNCNIC is used as-is from testPayload
         };
 
-        const res = await fetch('https://gw.fbr.gov.pk/di_data/v1/di/validateinvoicedata_sb', {
+        const res = await fetch('https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata_sb', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -258,7 +319,7 @@ export default function FBRSandboxPage() {
         });
 
         const data = await res.json();
-        
+
         results.push({
           scenario: scenario.name,
           scenarioId: scenario.id,
@@ -278,9 +339,9 @@ export default function FBRSandboxPage() {
 
       // Update results in real-time
       setBatchResults([...results]);
-      
+
       // Small delay between requests
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
 
     setBatchTesting(false);
@@ -368,16 +429,16 @@ export default function FBRSandboxPage() {
 
       if (invoiceRes.ok) {
         const invoiceResult = await invoiceRes.json();
-        setResponse({ 
-          status: 200, 
-          data: { 
-            success: true, 
+        setResponse({
+          status: 200,
+          data: {
+            success: true,
             message: 'Invoice created successfully!',
             invoice_id: invoiceResult.invoice.id,
             invoice_number: invoiceResult.invoice.invoice_number
-          } 
+          }
         });
-        
+
         // Redirect to invoice after 2 seconds
         setTimeout(() => {
           router.push(`/seller/invoices/${invoiceResult.invoice.id}`);
@@ -395,30 +456,30 @@ export default function FBRSandboxPage() {
 
   if (loadingSettings) {
     return (
-      <SellerLayout>
+      // <SellerLayout>
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <div className="text-4xl mb-4">🧪</div>
             <div className="text-lg text-gray-600">Loading sandbox...</div>
           </div>
         </div>
-      </SellerLayout>
+      // </SellerLayout>
     );
   }
 
   return (
     <>
       <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">FBR Sandbox Testing</h1>
-        <p className="text-gray-600">Test FBR API validation and posting with sandbox data</p>
-      </div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">FBR Sandbox Testing</h1>
+          <p className="text-gray-600">Test FBR API validation and posting with sandbox data</p>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Panel - Configuration */}
-        <div className="space-y-6">
-          {/* Token Input */}
-          <div className="bg-white rounded-lg shadow p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Panel - Configuration */}
+          <div className="space-y-6">
+            {/* Token Input */}
+            <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">🔑 Sandbox Security Token</h2>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -432,8 +493,8 @@ export default function FBRSandboxPage() {
                   placeholder="Enter FBR sandbox token"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {token === '07de2afc-caed-3215-900b-b01720619ca4' 
-                    ? 'Using default sandbox token' 
+                  {token === '07de2afc-caed-3215-900b-b01720619ca4'
+                    ? 'Using default sandbox token'
                     : 'Using token from company settings'}
                 </p>
               </div>
@@ -469,9 +530,10 @@ export default function FBRSandboxPage() {
                 >
                   <option value="">-- Select a test scenario --</option>
                   {[...FBR_TEST_SCENARIOS]
+                    .filter(s => s && s.id)
                     .sort((a, b) => {
-                      const numA = parseInt(a.id.replace('SN', ''));
-                      const numB = parseInt(b.id.replace('SN', ''));
+                      const numA = parseInt(a.id.replace('SN', '') || '0');
+                      const numB = parseInt(b.id.replace('SN', '') || '0');
                       return numA - numB;
                     })
                     .map((scenario: FBRTestScenario) => (
@@ -553,7 +615,7 @@ export default function FBRSandboxPage() {
             {/* Response Display */}
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">📊 API Response</h2>
-              
+
               {error && (
                 <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-sm font-semibold text-red-900">❌ Error</p>
@@ -563,9 +625,8 @@ export default function FBRSandboxPage() {
 
               {response && (
                 <div className="space-y-4">
-                  <div className={`p-4 rounded-lg ${
-                    response.status === 200 ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-                  }`}>
+                  <div className={`p-4 rounded-lg ${response.status === 200 ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+                    }`}>
                     <p className="text-sm font-semibold">
                       Status: <span className={response.status === 200 ? 'text-green-700' : 'text-red-700'}>
                         {response.status}
@@ -610,11 +671,10 @@ export default function FBRSandboxPage() {
                   {batchResults.map((result, index) => (
                     <div
                       key={index}
-                      className={`p-3 rounded-lg border ${
-                        result.success
-                          ? 'bg-green-50 border-green-200'
-                          : 'bg-red-50 border-red-200'
-                      }`}
+                      className={`p-3 rounded-lg border ${result.success
+                        ? 'bg-green-50 border-green-200'
+                        : 'bg-red-50 border-red-200'
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
@@ -646,7 +706,9 @@ export default function FBRSandboxPage() {
                 <li>• Use the provided sandbox token or your own</li>
                 <li>• Modify the JSON payload to test different scenarios</li>
                 <li>• Validate before posting to check for errors</li>
-                <li>• NTN must be 7 digits or CNIC must be 13 digits</li>
+                <li>• <strong>NTN:</strong> Must be 7 digits (normalized automatically)</li>
+                <li>• <strong>CNIC:</strong> Must be 13 digits (dashes removed automatically)</li>
+                <li>• Seller identifier is loaded based on your Preferences setting</li>
                 <li>• Batch testing validates all {FBR_TEST_SCENARIOS.length} scenarios automatically</li>
               </ul>
             </div>

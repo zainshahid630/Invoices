@@ -14,10 +14,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL('https://invoicefbr.com'),
   title: {
-    default: "InvoiceFBR - FBR Compliant Invoicing Software Pakistan",
+    default: "Digital Invoice FBR | Best FBR Invoice Software Pakistan | InvoiceFBR",
     template: "%s | InvoiceFBR"
   },
-  description: "Pakistan's #1 FBR-compliant invoicing software. Create professional invoices, automate FBR posting. Trusted by 130+ businesses. Free trial.",
+  description: "Digital Invoice FBR software trusted by 130+ Pakistani businesses. Generate FBR-compliant invoices, automate tax filing, QR codes. Best FBR invoice solution. Free 7-day trial!",
   keywords: [
     // Primary Keywords
     "FBR Digital Invoice",
@@ -158,8 +158,10 @@ export const metadata: Metadata = {
   },
 
   verification: {
-    google: null,
-    // yandex: "your-yandex-verification-code", // Optional: Add later if needed
+    google: "google-site-verification-code-here", // Replace with actual code from Google Search Console
+    other: {
+      "msvalidate.01": "bing-verification-code-here", // Replace with actual code from Bing Webmaster Tools
+    }
   },
 
   category: "Business Software",
@@ -181,9 +183,6 @@ export default function RootLayout({
     <html lang="en-PK" className={inter.variable}>
       <head>
         {/* Preconnect to external domains for performance */}
-        <link rel="preconnect" href="https://images.unsplash.com" />
-        <link rel="dns-prefetch" href="https://images.unsplash.com" />
-
         {/* FBR Gateway - Critical for invoice posting */}
         <link rel="preconnect" href="https://gw.fbr.gov.pk" />
         <link rel="dns-prefetch" href="https://gw.fbr.gov.pk" />
@@ -310,6 +309,7 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
+        {/* DevTools blocker - DISABLED for all environments */}
         <GoogleAnalytics measurementId="G-Q42N5FT1PC" />
         <Providers>
           <ToastProvider>

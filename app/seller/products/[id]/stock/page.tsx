@@ -79,7 +79,7 @@ export default function StockAdjustmentPage() {
         `Stock ${formData.change_type === 'in' ? 'increased' : 'decreased'} successfully! ` +
         `Previous: ${data.previous_stock}, New: ${data.new_stock}`
       );
-      
+
       // Reset form
       setFormData({
         change_type: 'in',
@@ -123,147 +123,146 @@ export default function StockAdjustmentPage() {
 
         {/* Content */}
         <div className="max-w-3xl">
-        {/* Current Stock Card */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Current Stock Level</h2>
-          <div className="text-center">
-            <div className="text-5xl font-bold text-gray-900 mb-2">{product.current_stock}</div>
-            <div className="text-sm text-gray-600">{product.uom} available</div>
+          {/* Current Stock Card */}
+          <div className="bg-white shadow rounded-lg p-6 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Current Stock Level</h2>
+            <div className="text-center">
+              <div className="text-5xl font-bold text-gray-900 mb-2">{product.current_stock}</div>
+              <div className="text-sm text-gray-600">{product.uom} available</div>
+            </div>
           </div>
-        </div>
 
-        {/* Stock Adjustment Form */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Stock Adjustment</h2>
+          {/* Stock Adjustment Form */}
+          <div className="bg-white shadow rounded-lg p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Stock Adjustment</h2>
 
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
-              {success}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Change Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Adjustment Type <span className="text-red-500">*</span>
-              </label>
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, change_type: 'in' })}
-                  className={`p-4 border-2 rounded-lg transition ${
-                    formData.change_type === 'in'
-                      ? 'border-green-500 bg-green-50'
-                      : 'border-gray-300 hover:border-green-300'
-                  }`}
-                >
-                  <div className="text-3xl mb-2">📥</div>
-                  <div className="font-semibold">Stock In</div>
-                  <div className="text-sm text-gray-600">Add stock</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, change_type: 'out' })}
-                  className={`p-4 border-2 rounded-lg transition ${
-                    formData.change_type === 'out'
-                      ? 'border-red-500 bg-red-50'
-                      : 'border-gray-300 hover:border-red-300'
-                  }`}
-                >
-                  <div className="text-3xl mb-2">📤</div>
-                  <div className="font-semibold">Stock Out</div>
-                  <div className="text-sm text-gray-600">Remove stock</div>
-                </button>
+            {error && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+                {error}
               </div>
-            </div>
+            )}
 
-            {/* Quantity */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Quantity ({product.uom}) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                required
-                min="1"
-                value={formData.quantity}
-                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter quantity"
-              />
-              {formData.change_type === 'out' && formData.quantity && (
-                <p className="mt-2 text-sm text-gray-600">
-                  New stock will be: {Math.max(0, product.current_stock - parseInt(formData.quantity))} {product.uom}
-                </p>
-              )}
-              {formData.change_type === 'in' && formData.quantity && (
-                <p className="mt-2 text-sm text-gray-600">
-                  New stock will be: {product.current_stock + parseInt(formData.quantity)} {product.uom}
-                </p>
-              )}
-            </div>
+            {success && (
+              <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+                {success}
+              </div>
+            )}
 
-            {/* Reason */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Reason <span className="text-red-500">*</span>
-              </label>
-              <select
-                required
-                value={formData.reason}
-                onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Select a reason</option>
-                {formData.change_type === 'in' ? (
-                  <>
-                    <option value="Purchase">Purchase</option>
-                    <option value="Return from customer">Return from customer</option>
-                    <option value="Production">Production</option>
-                    <option value="Stock correction">Stock correction</option>
-                    <option value="Other">Other</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="Sale">Sale</option>
-                    <option value="Damage">Damage</option>
-                    <option value="Return to supplier">Return to supplier</option>
-                    <option value="Stock correction">Stock correction</option>
-                    <option value="Other">Other</option>
-                  </>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Change Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Adjustment Type <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, change_type: 'in' })}
+                    className={`p-4 border-2 rounded-lg transition ${formData.change_type === 'in'
+                        ? 'border-green-500 bg-green-50'
+                        : 'border-gray-300 hover:border-green-300'
+                      }`}
+                  >
+                    <div className="text-3xl mb-2">📥</div>
+                    <div className="font-semibold">Stock In</div>
+                    <div className="text-sm text-gray-600">Add stock</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, change_type: 'out' })}
+                    className={`p-4 border-2 rounded-lg transition ${formData.change_type === 'out'
+                        ? 'border-red-500 bg-red-50'
+                        : 'border-gray-300 hover:border-red-300'
+                      }`}
+                  >
+                    <div className="text-3xl mb-2">📤</div>
+                    <div className="font-semibold">Stock Out</div>
+                    <div className="text-sm text-gray-600">Remove stock</div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quantity */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Quantity ({product.uom}) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  onWheel={(e) => e.currentTarget.blur()}
+
+                  required
+                  min="1"
+                  value={formData.quantity}
+                  onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter quantity"
+                />
+                {formData.change_type === 'out' && formData.quantity && (
+                  <p className="mt-2 text-sm text-gray-600">
+                    New stock will be: {Math.max(0, product.current_stock - parseInt(formData.quantity))} {product.uom}
+                  </p>
                 )}
-              </select>
-            </div>
+                {formData.change_type === 'in' && formData.quantity && (
+                  <p className="mt-2 text-sm text-gray-600">
+                    New stock will be: {product.current_stock + parseInt(formData.quantity)} {product.uom}
+                  </p>
+                )}
+              </div>
 
-            {/* Submit Buttons */}
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                disabled={submitting}
-                className={`flex-1 py-3 text-white rounded-lg transition disabled:opacity-50 ${
-                  formData.change_type === 'in'
-                    ? 'bg-green-600 hover:bg-green-700'
-                    : 'bg-red-600 hover:bg-red-700'
-                }`}
-              >
-                {submitting ? 'Processing...' : `${formData.change_type === 'in' ? 'Add' : 'Remove'} Stock`}
-              </button>
-              <Link
-                href={`/seller/products/${product.id}`}
-                className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-center"
-              >
-                Cancel
-              </Link>
-            </div>
-          </form>
-        </div>
+              {/* Reason */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Reason <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.reason}
+                  onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select a reason</option>
+                  {formData.change_type === 'in' ? (
+                    <>
+                      <option value="Purchase">Purchase</option>
+                      <option value="Return from customer">Return from customer</option>
+                      <option value="Production">Production</option>
+                      <option value="Stock correction">Stock correction</option>
+                      <option value="Other">Other</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="Sale">Sale</option>
+                      <option value="Damage">Damage</option>
+                      <option value="Return to supplier">Return to supplier</option>
+                      <option value="Stock correction">Stock correction</option>
+                      <option value="Other">Other</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="flex gap-4">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className={`flex-1 py-3 text-white rounded-lg transition disabled:opacity-50 ${formData.change_type === 'in'
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-red-600 hover:bg-red-700'
+                    }`}
+                >
+                  {submitting ? 'Processing...' : `${formData.change_type === 'in' ? 'Add' : 'Remove'} Stock`}
+                </button>
+                <Link
+                  href={`/seller/products/${product.id}`}
+                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-center"
+                >
+                  Cancel
+                </Link>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </>

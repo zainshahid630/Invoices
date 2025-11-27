@@ -9,6 +9,25 @@ import {
   AlertCircle, UserPlus, Key, Send, Download, Eye
 } from "lucide-react";
 
+// Optimized blur data URL for better loading experience
+const shimmer = (w: number, h: number) => `
+<svg width="${w}" height="${h}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <linearGradient id="g">
+      <stop stop-color="#f3f4f6" offset="20%" />
+      <stop stop-color="#e5e7eb" offset="50%" />
+      <stop stop-color="#f3f4f6" offset="70%" />
+    </linearGradient>
+  </defs>
+  <rect width="${w}" height="${h}" fill="#f3f4f6" />
+  <rect id="r" width="${w}" height="${h}" fill="url(#g)" />
+  <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite"  />
+</svg>`;
+
+const toBase64 = (str: string) =>
+  typeof window === 'undefined'
+    ? Buffer.from(str).toString('base64')
+    : window.btoa(str);
 
 export default function HowItWorksPage() {
   const [activeTab, setActiveTab] = useState<"getting-started" | "features" | "settings">("getting-started");
@@ -281,7 +300,7 @@ export default function HowItWorksPage() {
                 href="/register"
                 className="inline-flex items-center justify-center px-8 py-4 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl"
               >
-                Start 14-Day Free Trial
+                Get Started Today
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
               <a
@@ -445,9 +464,11 @@ export default function HowItWorksPage() {
                   width={1200}
                   height={600}
                   className="w-full h-auto"
-                  loading="lazy"
-                  quality={75}
+                  loading="eager"
+                  quality={85}
                   sizes="(max-width: 768px) 100vw, 1200px"
+                  placeholder="blur"
+                  blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(1200, 600))}`}
                 />
               </div>
               <div className="mt-4 p-4 bg-white rounded-lg border border-amber-200">
@@ -475,8 +496,8 @@ export default function HowItWorksPage() {
                 <div className="flex items-start gap-3 bg-white p-4 rounded-lg">
                   <CheckCircle2 className="h-6 w-6 text-green-500 flex-shrink-0 mt-1" />
                   <div>
-                    <p className="font-semibold text-gray-900">14-Day Free Trial</p>
-                    <p className="text-sm text-gray-600">Try first, then decide</p>
+                    <p className="font-semibold text-gray-900">Easy Setup</p>
+                    <p className="text-sm text-gray-600">Get started in minutes</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 bg-white p-4 rounded-lg">
@@ -524,18 +545,19 @@ export default function HowItWorksPage() {
                     } gap-6 md:gap-8 items-center bg-white rounded-2xl shadow-xl p-6 md:p-8 hover:shadow-2xl transition-all`}
                 >
                   <div className="lg:w-1/2 w-full">
-                    <div className="rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg">
+                    <div className="rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg bg-gray-100">
                       <Image
                         src={`/screenshots/${feature.image}`}
                         alt={feature.title}
                         width={800}
                         height={500}
                         className="w-full h-auto"
-                        loading="lazy"
-                        quality={75}
+                        loading={index < 2 ? "eager" : "lazy"}
+                        priority={index < 2}
+                        quality={85}
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 800px"
                         placeholder="blur"
-                        blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+                        blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(800, 500))}`}
                       />
                     </div>
                   </div>
@@ -614,18 +636,19 @@ export default function HowItWorksPage() {
                       </p>
                     </div>
 
-                    <div className="border-t-2 border-gray-100">
+                    <div className="border-t-2 border-gray-100 bg-gray-100">
                       <Image
                         src={`/screenshots/${setting.image}`}
                         alt={setting.title}
                         width={600}
                         height={400}
                         className="w-full h-auto"
-                        loading="lazy"
-                        quality={75}
+                        loading={index < 2 ? "eager" : "lazy"}
+                        priority={index < 2}
+                        quality={85}
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
                         placeholder="blur"
-                        blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+                        blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(600, 400))}`}
                       />
                     </div>
                   </div>
@@ -689,7 +712,7 @@ export default function HowItWorksPage() {
               { icon: Package, title: "Complete Management", desc: "All-in-one solution" },
               { icon: BarChart3, title: "Real-time Reports", desc: "Instant business insights" },
               { icon: Shield, title: "Sandbox Testing", desc: "Practice before going live" },
-              { icon: FileText, title: "14-Day Free Trial", desc: "Try first, pay later" }
+              { icon: FileText, title: "Quick Start", desc: "Get started instantly" }
             ].map((benefit, index) => {
               const Icon = benefit.icon;
               return (
@@ -713,7 +736,7 @@ export default function HowItWorksPage() {
             Ready to Get Started?
           </h2>
           <p className="text-base md:text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
-            Start your 14-day free trial today and experience hassle-free FBR-compliant invoicing!
+            Get started today and experience hassle-free FBR-compliant invoicing!
             No credit card required, no commitment!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -721,7 +744,7 @@ export default function HowItWorksPage() {
               href="/register"
               className="inline-flex items-center justify-center px-8 md:px-10 py-4 md:py-5 bg-white text-blue-600 rounded-xl font-bold text-base md:text-lg hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl"
             >
-              Start Free Trial
+              Get Started
               <ArrowRight className="ml-2 h-5 w-5 md:h-6 md:w-6" />
             </Link>
             <a
@@ -735,7 +758,7 @@ export default function HowItWorksPage() {
             </a>
           </div>
           <p className="text-sm text-blue-200 mt-6">
-            ✅ 14 days free • ❌ No credit card required • 🔄 Cancel anytime
+            ✅ Quick setup • ❌ No credit card required • 🔄 Cancel anytime
           </p>
         </div>
       </div>

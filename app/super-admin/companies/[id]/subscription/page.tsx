@@ -155,6 +155,8 @@ export default function SubscriptionManagement() {
                 <input
                   name="amount"
                   type="number"
+                  onWheel={(e) => e.currentTarget.blur()}
+
                   step="0.01"
                   required
                   value={formData.amount || ''}

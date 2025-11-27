@@ -1,9 +1,36 @@
 /* eslint-disable @next/next/no-img-element */
 import { InvoiceTemplateProps } from './types';
 
-export function ClassicTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplateProps) {
+export function ClassicTemplate({ 
+  invoice, 
+  company, 
+  qrCodeUrl,
+  isCommercialInvoice = false,
+  commercialHsCode = '',
+  commercialUom = ''
+}: InvoiceTemplateProps) {
   const itemCount = invoice.items.length;
   const isCompact = itemCount > 5;
+
+  // Get most frequent HS Code and UOM from items
+  const getMostFrequent = (arr: string[]) => {
+    const frequency: { [key: string]: number } = {};
+    arr.forEach(val => {
+      if (val) frequency[val] = (frequency[val] || 0) + 1;
+    });
+    return Object.keys(frequency).reduce((a, b) =>
+      frequency[a] > frequency[b] ? a : b, arr[0] || ''
+    );
+  };
+
+  const hsCodes = invoice.items.map(item => item.hs_code).filter(Boolean);
+  const uoms = invoice.items.map(item => item.uom).filter(Boolean);
+  const mostFrequentHsCode = hsCodes.length > 0 ? getMostFrequent(hsCodes) : '';
+  const mostFrequentUom = uoms.length > 0 ? getMostFrequent(uoms) : '';
+
+  // Use commercial values if this is a commercial invoice
+  const displayHsCode = isCommercialInvoice ? commercialHsCode : mostFrequentHsCode;
+  const displayUom = isCommercialInvoice ? commercialUom : mostFrequentUom;
 
   return (
     <div
@@ -18,7 +45,9 @@ export function ClassicTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplate
         <div className="border-b-2 border-gray-700 p-4">
           <div className="flex justify-between items-start mb-3">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'serif' }}>INVOICE</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'serif' }}>
+                {isCommercialInvoice ? 'COMMERCIAL INVOICE' : 'INVOICE'}
+              </h1>
               <div className="h-1 w-16 bg-gray-800"></div>
             </div>
             <div className="text-right">
@@ -41,12 +70,42 @@ export function ClassicTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplate
               <p className="text-lg font-bold text-gray-900" style={{ fontFamily: 'monospace' }}>
                 {invoice.invoice_number}
               </p>
+              {displayHsCode && <p className="text-xs text-gray-600 mt-1">HS Code: {displayHsCode}</p>}
+              {displayUom && <p className="text-xs text-gray-600">UOM: {displayUom}</p>}
+              {invoice.po_number && (
+                <>
+                  <p className="text-xs font-bold text-gray-500 uppercase mb-0.5 mt-2">PO Number</p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {invoice.po_number}
+                  </p>
+                </>
+              )}
+              {invoice.dc_code && (
+                <>
+                  <p className="text-xs font-bold text-gray-500 uppercase mb-0.5 mt-2">DC Code</p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {invoice.dc_code}
+                  </p>
+                </>
+              )}
             </div>
             <div className="text-right">
               <p className="text-xs font-bold text-gray-500 uppercase mb-0.5">Invoice Date</p>
               <p className="text-sm font-bold text-gray-900">
                 {new Date(invoice.invoice_date).toLocaleDateString('en-PK')}
               </p>
+              {invoice.items[0]?.hs_code && (
+                <>
+                  <p className="text-xs font-bold text-gray-500 uppercase mb-0.5 mt-2">HS Code</p>
+                  <p className="text-sm font-bold text-gray-900">{invoice.items[0].hs_code}</p>
+                </>
+              )}
+              {invoice.items[0]?.uom && (
+                <>
+                  <p className="text-xs font-bold text-gray-500 uppercase mb-0.5 mt-2">UOM</p>
+                  <p className="text-sm font-bold text-gray-900">{invoice.items[0].uom}</p>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -70,7 +129,9 @@ export function ClassicTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplate
               Buyer Information
             </h2>
             <div className="space-y-1">
-              <p className="text-base font-bold text-gray-900">{invoice.buyer_name}</p>
+              {invoice.buyer_name !== invoice.buyer_business_name && (
+                <p className="text-base font-bold text-gray-900">{invoice.buyer_name}</p>
+              )}
               {invoice.buyer_business_name && <p className="text-xs">{invoice.buyer_business_name}</p>}
               {invoice.buyer_ntn_cnic && <p className="text-xs">NTN/CNIC: {invoice.buyer_ntn_cnic}</p>}
             </div>
@@ -83,8 +144,6 @@ export function ClassicTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplate
             <thead>
               <tr className="bg-gray-700 text-white">
                 <th className="text-left py-2 px-2 uppercase">Description</th>
-                <th className="text-left py-2 px-2 uppercase">HS Code</th>
-                <th className="text-center py-2 px-2 uppercase">UOM</th>
                 <th className="text-right py-2 px-2 uppercase">Rate</th>
                 <th className="text-right py-2 px-2 uppercase">Qty</th>
                 <th className="text-right py-2 px-2 uppercase">Amount</th>
@@ -94,8 +153,6 @@ export function ClassicTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplate
               {invoice.items.map((item, i) => (
                 <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} border-b`}>
                   <td className="py-1.5 px-2">{item.item_name}</td>
-                  <td className="py-1.5 px-2">{item.hs_code || '-'}</td>
-                  <td className="py-1.5 px-2 text-center">{item.uom}</td>
                   <td className="py-1.5 px-2 text-right">
                     {Number(item.unit_price).toLocaleString()}
                   </td>
@@ -113,9 +170,10 @@ export function ClassicTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplate
       {/* FOOTER SECTION */}
       <div className="grid grid-cols-2 gap-4 p-4 border-t-2 border-gray-700">
 
-        {/* QR Code and FBR Logo */}
+        {/* QR Code and FBR Logo - Hidden for Commercial Invoice */}
         <div className="flex items-center justify-center border p-3">
-          {qrCodeUrl && invoice.status === 'fbr_posted' && invoice.fbr_invoice_number ? (
+             {!isCommercialInvoice && qrCodeUrl && invoice.status === 'fbr_posted' && invoice.fbr_invoice_number 
+    ? (
             <div className="flex flex-col items-center">
               <div className="flex items-center gap-2">
                 <img src={qrCodeUrl} alt="QR Code" className="w-16 h-16 border border-black" />
@@ -127,10 +185,13 @@ export function ClassicTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplate
               </div>
               <p className="text-[8px] mt-1 font-semibold">{invoice.fbr_invoice_number}</p>
             </div>
-          ) : (
-            <div className="w-28 h-28 border border-dashed flex items-center justify-center text-xs text-gray-400">
-              QR
+          ) : isCommercialInvoice ? (
+            <div className="text-center text-gray-600">
+              <p className="text-xs font-semibold">Commercial Invoice</p>
+              <p className="text-[10px]">For customs purposes</p>
             </div>
+          ) : (
+          <></>
           )}
         </div>
 
@@ -160,6 +221,14 @@ export function ClassicTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplate
           </div>
         </div>
       </div>
+
+      {/* Notes Section */}
+      {invoice.notes && (
+        <div className="border-t-2 border-gray-700 p-4 bg-gray-50">
+          <h3 className="text-sm font-bold text-gray-700 uppercase mb-2">Notes</h3>
+          <p className="text-sm text-gray-700">{invoice.notes}</p>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="p-3 bg-gray-800 text-white text-center text-xs">

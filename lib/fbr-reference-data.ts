@@ -93,6 +93,37 @@ export const FBR_UOMS = [
     { "uoM_ID": 96, "description": "1000 kWh" }
 ];
 
+export const FBR_SCENARIOS = [
+    { value: 'SN001', label: 'SN001 – Goods at Standard Rate to Registered Buyers' },
+    { value: 'SN002', label: 'SN002 – Goods at Standard Rate to Unregistered Buyers' },
+    { value: 'SN003', label: 'SN003 – Steel Melting and Re-rolling' },
+    { value: 'SN004', label: 'SN004 – Ship Breaking (Uses Reference Seller NTN)' },
+    { value: 'SN005', label: 'SN005 – Reduced Rate Sale' },
+    { value: 'SN006', label: 'SN006 – Exempt Goods Sale' },
+    { value: 'SN007', label: 'SN007 – Zero Rated Sale' },
+    { value: 'SN008', label: 'SN008 – Sale Invoice Scenario' },
+    { value: 'SN009', label: 'SN009 – Cotton Ginners' },
+    { value: 'SN010', label: 'SN010 – Telecommunication Services' },
+    { value: 'SN011', label: 'SN011 – Toll Manufacturing' },
+    { value: 'SN012', label: 'SN012 – Petroleum Products' },
+    { value: 'SN013', label: 'SN013 – Electricity Supply to Retailers' },
+    { value: 'SN014', label: 'SN014 – Gas to CNG Stations' },
+    { value: 'SN015', label: 'SN015 – Mobile Phones (Ninth Schedule)' },
+    { value: 'SN016', label: 'SN016 – Processing / Conversion of Goods' },
+    { value: 'SN017', label: 'SN017 – Sale of Goods where FED is Charged in ST Mode' },
+    { value: 'SN018', label: 'SN018 – Sale of Services where FED is Charged in ST Mode' },
+    { value: 'SN019', label: 'SN019 – Sale of Services' },
+    { value: 'SN020', label: 'SN020 – Electric Vehicle (1%)' },
+    { value: 'SN021', label: 'SN021 – Scenario SN021' },
+    { value: 'SN022', label: 'SN022 – Scenario SN022' },
+    { value: 'SN023', label: 'SN023 – Scenario SN023' },
+    { value: 'SN024', label: 'SN024 – Goods Sold that are Listed in SRO 297(1)/2023' },
+    { value: 'SN025', label: 'SN025 – Scenario SN025' },
+    { value: 'SN026', label: 'SN026 – Goods at Standard Rate to Registered Buyers' },
+    { value: 'SN027', label: 'SN027 – 3rd Schedule Goods to Registered Buyers' },
+    { value: 'SN028', label: 'SN028 – Goods at Reduced Rate' },
+];
+
 export interface FBRProvince {
     stateProvinceCode: number;
     stateProvinceDesc: string;

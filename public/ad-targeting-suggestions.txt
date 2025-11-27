@@ -1,0 +1,49 @@
+# 🎯 Exact Facebook Ad Targeting (business.facebook.com)
+
+Copy and paste these exact terms into the "Detailed Targeting" search box in Facebook Ads Manager.
+
+### 1. Business & Management (Broad Reach)
+*   **Small business** (Interest)
+*   **Business** (Interest)
+*   **Entrepreneurship** (Interest)
+*   **Management** (Interest)
+*   **Sales** (Interest)
+
+### 2. Finance & Accounting (High Relevance)
+*   **Accounting** (Interest)
+*   **Accounting software** (Interest)
+*   **Bookkeeping** (Interest)
+*   **Invoice** (Interest)
+*   **Finance** (Interest)
+*   **QuickBooks** (Interest) - *Targeting users of competitor software is very effective.*
+*   **Xero** (Interest)
+
+### 3. Retail & Wholesale (Your Core Customers)
+*   **Retail** (Interest)
+*   **Wholesale** (Interest)
+*   **Point of sale** (Interest)
+*   **Point of sale display** (Interest)
+*   **Supply chain** (Interest)
+
+### 4. Behaviors (The "Admin" Strategy)
+These are powerful because they target the actual owners/managers of pages.
+*   **Facebook Page Admins** > **Business page admins**
+*   **Facebook Page Admins** > **Retail page admins**
+*   **Small business owners** (Behavior)
+
+### 🏆 Recommended "Stacked" Audience
+For the best results in Pakistan, create an audience with this structure:
+
+**Location**: Pakistan
+**Age**: 24 - 55
+**Gender**: All
+
+**Detailed Targeting:**
+*   **Include people who match:**
+    *   Small business
+    *   Accounting software
+    *   Point of sale
+    *   Retail
+    *   Business page admins (Behavior)
+
+**Optimization**: Optimize for "Leads" or "Messages" (WhatsApp) to get direct inquiries.

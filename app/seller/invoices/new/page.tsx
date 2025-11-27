@@ -6,7 +6,7 @@ import Link from 'next/link';
 import SellerLayout from '../../components/SellerLayout';
 import { useToast } from '../../../components/ToastProvider';
 import { normalizeNTN } from '@/lib/ntn-utils';
-import { FBR_PROVINCES, FBR_DOC_TYPES, FBR_TRANS_TYPES, FBR_UOMS } from '@/lib/fbr-reference-data';
+import { FBR_PROVINCES, FBR_DOC_TYPES, FBR_TRANS_TYPES, FBR_UOMS, FBR_SCENARIOS } from '@/lib/fbr-reference-data';
 
 
 // Interfaces for FBR Data
@@ -32,36 +32,7 @@ interface FBRUOM {
 
 
 
-const SCENARIOS = [
-  { value: 'SN001', label: 'SN001 – Goods at Standard Rate to Registered Buyers' },
-  { value: 'SN002', label: 'SN002 – Goods at Standard Rate to Unregistered Buyers' },
-  { value: 'SN003', label: 'SN003 – Steel Melting and Re-rolling' },
-  { value: 'SN004', label: 'SN004 – Ship Breaking (Uses Reference Seller NTN)' },
-  { value: 'SN005', label: 'SN005 – Reduced Rate Sale' },
-  { value: 'SN006', label: 'SN006 – Exempt Goods Sale' },
-  { value: 'SN007', label: 'SN007 – Zero Rated Sale' },
-  { value: 'SN008', label: 'SN008 – Sale Invoice Scenario' },
-  { value: 'SN009', label: 'SN009 – Cotton Ginners' },
-  { value: 'SN010', label: 'SN010 – Telecommunication Services' },
-  { value: 'SN011', label: 'SN011 – Toll Manufacturing' },
-  { value: 'SN012', label: 'SN012 – Petroleum Products' },
-  { value: 'SN013', label: 'SN013 – Electricity Supply to Retailers' },
-  { value: 'SN014', label: 'SN014 – Gas to CNG Stations' },
-  { value: 'SN015', label: 'SN015 – Mobile Phones (Ninth Schedule)' },
-  { value: 'SN016', label: 'SN016 – Processing / Conversion of Goods' },
-  { value: 'SN017', label: 'SN017 – Sale of Goods where FED is Charged in ST Mode' },
-  { value: 'SN018', label: 'SN018 – Sale of Services where FED is Charged in ST Mode' },
-  { value: 'SN019', label: 'SN019 – Sale of Services' },
-  { value: 'SN020', label: 'SN020 – Electric Vehicle (1%)' },
-  { value: 'SN021', label: 'SN021 – Scenario SN021' },
-  { value: 'SN022', label: 'SN022 – Scenario SN022' },
-  { value: 'SN023', label: 'SN023 – Scenario SN023' },
-  { value: 'SN024', label: 'SN024 – Goods Sold that are Listed in SRO 297(1)/2023' },
-  { value: 'SN025', label: 'SN025 – Scenario SN025' },
-  { value: 'SN026', label: 'SN026 – Goods at Standard Rate to Registered Buyers' },
-  { value: 'SN027', label: 'SN027 – 3rd Schedule Goods to Registered Buyers' },
-  { value: 'SN028', label: 'SN028 – Goods at Reduced Rate' },
-];
+
 const PROVINCES = [
   'Punjab',
   'Sindh',
@@ -96,11 +67,8 @@ interface Product {
 interface InvoiceItem {
   product_id: string | null;
   item_name: string;
-  hs_code: string;
-  uom: string;
   unit_price: string;
   quantity: string;
-  sale_type: string; // NEW: Sale Type for FBR
   searchTerm?: string;
   showDropdown?: boolean;
 }
@@ -128,9 +96,13 @@ export default function NewInvoicePage() {
   const [formData, setFormData] = useState({
     invoice_number: '', // Will be auto-generated but editable
     po_number: '',
+    dc_code: '',
     invoice_date: new Date().toISOString().split('T')[0],
     invoice_type: 'Sale Invoice',
     scenario: 'SN001',
+    hs_code: '', // Invoice-level HS Code
+    uom: 'Numbers, pieces, units', // Invoice-level UOM
+    sale_type: 'Goods at standard rate (default)', // Invoice-level Sale Type
     sales_tax_rate: '18',
     further_tax_rate: '',
     payment_status: 'pending', // Default to pending (unpaid)
@@ -160,11 +132,8 @@ export default function NewInvoicePage() {
     {
       product_id: null,
       item_name: '',
-      hs_code: '',
-      uom: 'Numbers, pieces, units',
       unit_price: '',
       quantity: '',
-      sale_type: 'Goods at standard rate (default)', // Default
       searchTerm: '',
       showDropdown: false,
     },
@@ -210,6 +179,7 @@ export default function NewInvoicePage() {
           sales_tax_rate: data.defaultSalesTaxRate?.toString() || '18',
           further_tax_rate: data.defaultFurtherTaxRate?.toString() || '',
           scenario: data.defaultScenario || 'SN002',
+          hs_code: data.defaultHsCode || '',
         }));
       }
 
@@ -262,13 +232,28 @@ export default function NewInvoicePage() {
     setSelectedCustomerId(customerId);
     const customer = customers.find((c) => c.id === customerId);
     if (customer) {
+      // Normalize province to match FBR format (case-insensitive matching)
+      let normalizedProvince = customer.province || '';
+      if (normalizedProvince) {
+        // Try to find matching FBR province (case-insensitive)
+        const matchingProvince = provinces.find(
+          p => p.stateProvinceDesc.toLowerCase() === normalizedProvince.toLowerCase()
+        );
+        if (matchingProvince) {
+          normalizedProvince = matchingProvince.stateProvinceDesc;
+        } else {
+          // Fallback: convert to uppercase to match FBR format
+          normalizedProvince = normalizedProvince.toUpperCase();
+        }
+      }
+
       setManualBuyer({
         buyer_name: customer.name,
         buyer_business_name: customer.business_name || '',
         buyer_ntn_cnic: customer.ntn_cnic || '',
         buyer_gst_number: (customer as any).gst_number || '',
         buyer_address: customer.address || '',
-        buyer_province: customer.province || '',
+        buyer_province: normalizedProvince,
         buyer_registration_type: (customer as any).registration_type || 'Unregistered',
       });
       setCustomerSearchTerm('');
@@ -300,11 +285,8 @@ export default function NewInvoicePage() {
       newItems[index] = {
         product_id: product.id,
         item_name: product.name,
-        hs_code: product.hs_code || '',
-        uom: product.uom,
         unit_price: product.unit_price.toString(),
         quantity: newItems[index].quantity,
-        sale_type: 'Goods at standard rate (default)',
         searchTerm: '',
         showDropdown: false,
       };
@@ -351,7 +333,7 @@ export default function NewInvoicePage() {
   // Auto-save item to products table when all required fields are filled
   const autoSaveToProducts = async (item: InvoiceItem) => {
     // Only auto-save if item has all required fields and is not already linked to a product
-    if (!item.product_id && item.item_name && item.hs_code && item.uom && item.unit_price) {
+    if (!item.product_id && item.item_name && formData.hs_code && formData.uom && item.unit_price) {
       try {
         // Check if product already exists with same name
         const existingProduct = products.find(
@@ -366,8 +348,8 @@ export default function NewInvoicePage() {
             body: JSON.stringify({
               company_id: companyId,
               name: item.item_name,
-              hs_code: item.hs_code,
-              uom: item.uom,
+              hs_code: formData.hs_code,
+              uom: formData.uom,
               unit_price: parseFloat(item.unit_price),
               current_stock: 0, // Default stock
               is_active: true,
@@ -400,7 +382,7 @@ export default function NewInvoicePage() {
   };
 
   const addItem = () => {
-    // Auto-fill all fields from previous item
+    // Auto-fill item name and unit price from previous item
     const previousItem = items[items.length - 1];
 
     setItems([
@@ -408,11 +390,8 @@ export default function NewInvoicePage() {
       {
         product_id: null,
         item_name: previousItem?.item_name || '',
-        hs_code: previousItem?.hs_code || defaultHsCode,
-        uom: previousItem?.uom || 'Numbers, pieces, units',
         unit_price: previousItem?.unit_price || '',
         quantity: '', // Always start with empty quantity
-        sale_type: previousItem?.sale_type || 'Goods at standard rate (default)',
         searchTerm: '',
         showDropdown: false,
       },
@@ -568,10 +547,10 @@ export default function NewInvoicePage() {
         scenarioId: formData.scenario,
         buyerRegistrationType: manualBuyer.buyer_registration_type,
         items: items.map(item => ({
-          hsCode: item.hs_code,
+          hsCode: formData.hs_code,
           productDescription: item.item_name,
           rate: formData.sales_tax_rate + '%',
-          uoM: item.uom,
+          uoM: formData.uom,
           quantity: parseFloat(item.quantity),
           totalValues: 0, // Calculated by FBR or backend?
           valueSalesExcludingST: parseFloat(item.unit_price) * parseFloat(item.quantity),
@@ -583,7 +562,7 @@ export default function NewInvoicePage() {
           sroScheduleNo: "",
           fedPayable: 0,
           discount: 0,
-          saleType: item.sale_type,
+          saleType: formData.sale_type,
           sroItemSerialNo: ""
         }))
       };
@@ -615,15 +594,26 @@ export default function NewInvoicePage() {
       // toast.success('FBR Validated', 'Invoice data is valid according to FBR.');
       // // --- FBR Validation End ---
 
+      // Apply invoice-level fields (hs_code, uom, sale_type) to all items
+      const itemsWithInvoiceFields = items.map(item => ({
+        ...item,
+        hs_code: formData.hs_code,
+        uom: formData.uom,
+        sale_type: formData.sale_type,
+      } as any));
+
+      // Remove hs_code, uom, sale_type from formData as they're now in items
+      const { hs_code, uom, sale_type, ...invoiceData } = formData;
+
       const response = await fetch('/api/seller/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           company_id: companyId,
           customer_id: buyerMode === 'customer' ? selectedCustomerId : null,
-          ...formData,
+          ...invoiceData,
           ...manualBuyer,
-          items,
+          items: itemsWithInvoiceFields,
         }),
       });
 
@@ -660,9 +650,13 @@ export default function NewInvoicePage() {
     setFormData({
       invoice_number: '',
       po_number: '',
+      dc_code: '',
       invoice_date: new Date().toISOString().split('T')[0],
       invoice_type: 'Sale Invoice',
-      scenario: 'SN002',
+      scenario: 'SN001',
+      hs_code: '',
+      uom: 'Numbers, pieces, units',
+      sale_type: 'Goods at standard rate (default)',
       sales_tax_rate: '18',
       further_tax_rate: '',
       payment_status: 'pending',
@@ -683,11 +677,8 @@ export default function NewInvoicePage() {
       {
         product_id: null,
         item_name: '',
-        hs_code: defaultHsCode,
-        uom: 'Numbers, pieces, units',
         unit_price: '',
         quantity: '',
-        sale_type: 'Goods at standard rate (default)',
         searchTerm: '',
         showDropdown: false,
       },
@@ -836,6 +827,18 @@ export default function NewInvoicePage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                  DC Code
+                </label>
+                <input
+                  type="text"
+                  value={formData.dc_code}
+                  onChange={(e) => setFormData({ ...formData, dc_code: e.target.value })}
+                  placeholder="Delivery Challan Code (optional)"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Invoice Date <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -878,11 +881,64 @@ export default function NewInvoicePage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">-- Select Scenario --</option>
-                  {SCENARIOS.map((scenario) => (
+                  {FBR_SCENARIOS.map((scenario) => (
                     <option key={scenario.value} value={scenario.value}>
                       {scenario.label}
                     </option>
                   ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  HS Code <span className="text-gray-500 text-xs">(Applies to all items)</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.hs_code}
+                  onChange={(e) => setFormData({ ...formData, hs_code: e.target.value })}
+                  placeholder="Enter HS Code"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  UOM <span className="text-gray-500 text-xs">(Applies to all items)</span>
+                </label>
+                <select
+                  value={formData.uom}
+                  onChange={(e) => setFormData({ ...formData, uom: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  {uoms.length > 0 ? (
+                    uoms.map((u) => (
+                      <option key={u.uoM_ID} value={u.description}>
+                        {u.description}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="Numbers, pieces, units">Numbers, pieces, units</option>
+                  )}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Sale Type <span className="text-red-500">*</span> <span className="text-gray-500 text-xs">(Applies to all items)</span>
+                </label>
+                <select
+                  value={formData.sale_type}
+                  onChange={(e) => setFormData({ ...formData, sale_type: e.target.value })}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  {transactionTypes.length > 0 ? (
+                    transactionTypes.map((t) => (
+                      <option key={t.transactioN_TYPE_ID} value={t.transactioN_DESC}>
+                        {t.transactioN_DESC}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="Goods at standard rate (default)">Goods at standard rate (default)</option>
+                  )}
                 </select>
               </div>
             </div>
@@ -894,6 +950,8 @@ export default function NewInvoicePage() {
                 </label>
                 <input
                   type="number"
+                  onWheel={(e) => e.currentTarget.blur()}
+
                   step="0.01"
                   value={formData.sales_tax_rate}
                   onChange={(e) => setFormData({ ...formData, sales_tax_rate: e.target.value })}
@@ -907,6 +965,8 @@ export default function NewInvoicePage() {
                 </label>
                 <input
                   type="number"
+                  onWheel={(e) => e.currentTarget.blur()}
+
                   step="0.01"
                   value={formData.further_tax_rate}
                   onChange={(e) => setFormData({ ...formData, further_tax_rate: e.target.value })}
@@ -1052,8 +1112,7 @@ export default function NewInvoicePage() {
                     setManualBuyer({ ...manualBuyer, buyer_name: e.target.value })
                   }
                   required
-                  disabled={buyerMode === 'customer' && !!selectedCustomerId}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
@@ -1066,8 +1125,7 @@ export default function NewInvoicePage() {
                   onChange={(e) =>
                     setManualBuyer({ ...manualBuyer, buyer_business_name: e.target.value })
                   }
-                  disabled={buyerMode === 'customer' && !!selectedCustomerId}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
@@ -1080,8 +1138,7 @@ export default function NewInvoicePage() {
                     value={manualBuyer.buyer_ntn_cnic}
                     onChange={(e) => setManualBuyer({ ...manualBuyer, buyer_ntn_cnic: e.target.value })}
                     onBlur={(e) => validateBuyerNTN(e.target.value)}
-                    disabled={buyerMode === 'customer' && !!selectedCustomerId}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${buyerStatus === 'In-Active' ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${buyerStatus === 'In-Active' ? 'border-red-500 bg-red-50' : 'border-gray-300'
                       }`}
                   />
                   {isValidatingBuyer && (
@@ -1104,9 +1161,8 @@ export default function NewInvoicePage() {
                   onChange={(e) =>
                     setManualBuyer({ ...manualBuyer, buyer_gst_number: e.target.value })
                   }
-                  disabled={buyerMode === 'customer' && !!selectedCustomerId}
                   placeholder="Enter GST number (optional)"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
@@ -1119,8 +1175,7 @@ export default function NewInvoicePage() {
                     setManualBuyer({ ...manualBuyer, buyer_registration_type: e.target.value })
                   }
                   required
-                  disabled={buyerMode === 'customer' && !!selectedCustomerId}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="Registered">Registered</option>
                   <option value="Unregistered">Unregistered</option>
@@ -1136,8 +1191,7 @@ export default function NewInvoicePage() {
                   onChange={(e) =>
                     setManualBuyer({ ...manualBuyer, buyer_province: e.target.value })
                   }
-                  // disabled={buyerMode === 'customer' && !!selectedCustomerId}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Province</option>
                   {provinces.length > 0 ? (
@@ -1147,7 +1201,11 @@ export default function NewInvoicePage() {
                       </option>
                     ))
                   ) : (
-                    <option value="Sindh">Sindh</option>
+                    PROVINCES.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))
                   )}
                 </select>
               </div>
@@ -1158,9 +1216,8 @@ export default function NewInvoicePage() {
                   onChange={(e) =>
                     setManualBuyer({ ...manualBuyer, buyer_address: e.target.value })
                   }
-                  disabled={buyerMode === 'customer' && !!selectedCustomerId}
                   rows={2}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -1257,62 +1314,16 @@ export default function NewInvoicePage() {
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">
-                        HS Code
-                      </label>
-                      <input
-                        type="text"
-                        value={item.hs_code}
-                        onChange={(e) => handleItemChange(index, 'hs_code', e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">UOM</label>
-                      <select
-                        value={item.uom}
-                        onChange={(e) => handleItemChange(index, 'uom', e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      >
-                        {uoms.length > 0 ? (
-                          uoms.map((u) => (
-                            <option key={u.uoM_ID} value={u.description}>
-                              {u.description}
-                            </option>
-                          ))
-                        ) : (
-                          <option value="Numbers, pieces, units">Numbers, pieces, units</option>
-                        )}
-                      </select>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Sale Type <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={item.sale_type}
-                        onChange={(e) => handleItemChange(index, 'sale_type', e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      >
-                        {transactionTypes.length > 0 ? (
-                          transactionTypes.map((t) => (
-                            <option key={t.transactioN_TYPE_ID} value={t.transactioN_DESC}>
-                              {t.transactioN_DESC}
-                            </option>
-                          ))
-                        ) : (
-                          <option value="Goods at standard rate (default)">Goods at standard rate (default)</option>
-                        )}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
                         Unit Price <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="number"
+                        onWheel={(e) => e.currentTarget.blur()}
+
                         step="0.01"
                         value={item.unit_price}
                         onChange={(e) => handleItemChange(index, 'unit_price', e.target.value)}
+                        // onWheel={(e) => e.currentTarget.blur()}
                         required
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       />
@@ -1323,10 +1334,13 @@ export default function NewInvoicePage() {
                       </label>
                       <input
                         type="number"
+                        onWheel={(e) => e.currentTarget.blur()}
+
                         step="0.01"
                         value={item.quantity}
                         onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                         required
+                        // onWheel={(e) => e.currentTarget.blur()}
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
@@ -1344,6 +1358,20 @@ export default function NewInvoicePage() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Add Item Button at Bottom */}
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={addItem}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add Item
+              </button>
             </div>
           </div>
 

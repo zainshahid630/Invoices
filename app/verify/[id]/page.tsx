@@ -251,10 +251,10 @@ export default function PublicInvoiceVerificationPage() {
               <p className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase mb-1">Invoice Type</p>
               <p className="text-xs sm:text-sm font-bold text-gray-900">{invoice.invoice_type}</p>
             </div>
-            <div>
+            {/* <div>
               <p className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase mb-1">Status</p>
               <p className="text-xs sm:text-sm font-bold text-green-600 uppercase">{invoice.payment_status}</p>
-            </div>
+            </div> */}
           </div>
 
           {/* Items Table */}

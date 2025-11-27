@@ -6,7 +6,8 @@ import {
   ModernTemplate, 
   ExcelTemplate, 
   ClassicTemplate, 
-  LetterheadTemplate 
+  LetterheadTemplate,
+  DCTemplate 
 } from '@/components/invoice-templates';
 
 interface InvoiceItem {
@@ -291,6 +292,8 @@ export default function InvoicePrintPage() {
             <ModernTemplate invoice={invoice} company={company} qrCodeUrl={qrCodeUrl} />
           ) : template === 'excel' ? (
             <ExcelTemplate invoice={invoice} company={company} qrCodeUrl={qrCodeUrl} />
+          ) : template === 'dc' ? (
+            <DCTemplate invoice={invoice} company={company} qrCodeUrl={qrCodeUrl} />
           ) : template === 'letterhead' ? (
             <LetterheadTemplate 
               invoice={invoice} 

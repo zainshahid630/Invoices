@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ModernTemplate, ExcelTemplate, ClassicTemplate, LetterheadTemplate } from '@/components/invoice-templates';
+import { ModernTemplate, ExcelTemplate, ClassicTemplate, LetterheadTemplate, DCTemplate } from '@/components/invoice-templates';
 
 interface InvoiceItem {
   id: string;
@@ -244,6 +244,9 @@ export default function BulkDetailedPrintPage() {
                 topSpace={letterheadTopSpace}
                 showQr={letterheadShowQr}
               />
+            )}
+            {template === 'dc' && (
+              <DCTemplate invoice={invoice} company={company} qrCodeUrl={getQrCodeUrl(invoice.id)} />
             )}
           </div>
         ))}

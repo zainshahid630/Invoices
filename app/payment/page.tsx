@@ -30,7 +30,7 @@ export default function PaymentPage() {
       if (data.success) {
         // Open payment in new tab for better UX
         const newWindow = window.open('', '_blank');
-        
+
         if (newWindow) {
           // Create form in new window and submit to JazzCash
           const form = newWindow.document.createElement('form');
@@ -86,7 +86,7 @@ export default function PaymentPage() {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">JazzCash Payment</h1>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
@@ -94,6 +94,8 @@ export default function PaymentPage() {
             </label>
             <input
               type="number"
+              onWheel={(e) => e.currentTarget.blur()}
+
               id="amount"
               required
               min="1"
@@ -178,7 +180,7 @@ export default function PaymentPage() {
               <strong>💡 Tip:</strong> Payment will open in a new tab. Please allow pop-ups if prompted.
             </p>
           </div>
-          
+
           <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
             <p className="text-sm text-yellow-800">
               <strong>Test Mode:</strong> Use test card 4111 1111 1111 1111 with any future expiry and CVV.

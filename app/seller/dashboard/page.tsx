@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import SubscriptionInfo from '@/app/components/SubscriptionInfo';
+import DemoWelcomeModal from '@/components/DemoWelcomeModal';
 
 interface Stats {
   totalProducts: number;
@@ -26,6 +27,7 @@ interface Activity {
 export default function SellerDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   useEffect(() => {
     const session = localStorage.getItem('seller_session');
@@ -33,7 +35,17 @@ export default function SellerDashboard() {
       router.push('/seller/login');
       return;
     }
-    setUser(JSON.parse(session));
+    const userData = JSON.parse(session);
+    setUser(userData);
+
+    // Check if this is the demo account and if modal hasn't been shown in this session
+    const DEMO_ACCOUNT_ID = '63e5c4ca-2b3b-45eb-9261-3789e5fb9c39';
+    const hasSeenWelcome = sessionStorage.getItem('demo_welcome_shown');
+    
+    if (userData.company_id === DEMO_ACCOUNT_ID && !hasSeenWelcome) {
+      setShowWelcomeModal(true);
+      sessionStorage.setItem('demo_welcome_shown', 'true');
+    }
   }, [router]);
 
   const companyId = user?.company_id;
@@ -50,102 +62,20 @@ export default function SellerDashboard() {
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
-  // Fetch invoices with React Query
-  const { data: invoicesData } = useQuery({
-    queryKey: ['invoices', companyId],
+  // Fetch recent activity with React Query
+  const { data: recentActivityData, isLoading: activityLoading } = useQuery({
+    queryKey: ['recent-activity', companyId],
     queryFn: async () => {
-      const res = await fetch(`/api/seller/invoices?company_id=${companyId}`);
-      if (!res.ok) throw new Error('Failed to fetch invoices');
+      const res = await fetch(`/api/seller/recent-activity?company_id=${companyId}`);
+      if (!res.ok) throw new Error('Failed to fetch recent activity');
       const data = await res.json();
-      return Array.isArray(data.invoices) ? data.invoices : [];
+      return Array.isArray(data.activities) ? data.activities : [];
     },
     enabled: !!companyId,
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
-  // Fetch products with React Query
-  const { data: productsData } = useQuery({
-    queryKey: ['products', companyId],
-    queryFn: async () => {
-      const res = await fetch(`/api/seller/products?company_id=${companyId}`);
-      if (!res.ok) throw new Error('Failed to fetch products');
-      const data = await res.json();
-      return Array.isArray(data.products) ? data.products : [];
-    },
-    enabled: !!companyId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  // Fetch customers with React Query
-  const { data: customersData } = useQuery({
-    queryKey: ['customers', companyId],
-    queryFn: async () => {
-      const res = await fetch(`/api/seller/customers?company_id=${companyId}`);
-      if (!res.ok) throw new Error('Failed to fetch customers');
-      const data = await res.json();
-      return Array.isArray(data.customers) ? data.customers : [];
-    },
-    enabled: !!companyId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  // Build recent activity from fetched data
-  const recentActivity = useMemo(() => {
-    const activities: Activity[] = [];
-    const invoices = invoicesData || [];
-    const products = productsData || [];
-    const customers = customersData || [];
-
-    // Add recent invoices (last 5)
-    invoices.slice(0, 5).forEach((invoice: any) => {
-      if (invoice?.id && invoice?.created_at) {
-        activities.push({
-          id: invoice.id,
-          type: 'invoice',
-          title: `Invoice ${invoice.invoice_number || 'N/A'}`,
-          description: `${invoice.buyer_name || 'Unknown'} - PKR ${parseFloat(invoice.total_amount || 0).toLocaleString()}`,
-          timestamp: invoice.created_at,
-          icon: '📄',
-          link: `/seller/invoices/${invoice.id}`
-        });
-      }
-    });
-
-    // Add recent products (last 3)
-    products.slice(0, 3).forEach((product: any) => {
-      if (product?.id && product?.created_at) {
-        activities.push({
-          id: product.id,
-          type: 'product',
-          title: `Product: ${product.name || 'Unknown'}`,
-          description: `Stock: ${product.current_stock || 0} ${product.uom || 'units'}`,
-          timestamp: product.created_at,
-          icon: '📦',
-          link: `/seller/products`
-        });
-      }
-    });
-
-    // Add recent customers (last 2)
-    customers.slice(0, 2).forEach((customer: any) => {
-      if (customer?.id && customer?.created_at) {
-        activities.push({
-          id: customer.id,
-          type: 'customer',
-          title: `Customer: ${customer.name || 'Unknown'}`,
-          description: customer.business_name || 'New customer added',
-          timestamp: customer.created_at,
-          icon: '👤',
-          link: `/seller/customers/${customer.id}`
-        });
-      }
-    });
-
-    // Sort by timestamp and take top 10
-    return activities
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 10);
-  }, [invoicesData, productsData, customersData]);
+  const recentActivity = recentActivityData || [];
 
   if (statsLoading || !user) {
     return (
@@ -157,143 +87,160 @@ export default function SellerDashboard() {
 
   return (
     <div className="p-6">
-        {/* Welcome Message */}
-        <div className="mb-6">
+      {/* Demo Welcome Modal */}
+      <DemoWelcomeModal 
+        isOpen={showWelcomeModal} 
+        onClose={() => setShowWelcomeModal(false)} 
+      />
+
+      {/* Welcome Message */}
+      <div className="mb-6 flex items-center justify-between">
+        <div>
           <h2 className="text-2xl font-bold text-gray-900">Welcome back, {user.name}!</h2>
           <p className="text-gray-600 mt-1">Here&apos;s what&apos;s happening with your business today.</p>
         </div>
+        {user.company_id === '63e5c4ca-2b3b-45eb-9261-3789e5fb9c39' && (
+          <button
+            onClick={() => setShowWelcomeModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 font-medium"
+          >
+            <span>🎯</span>
+            <span>View Demo Guide</span>
+          </button>
+        )}
+      </div>
 
-        {/* Subscription Info - Non-blocking informational display */}
-        <SubscriptionInfo />
+      {/* Subscription Info - Non-blocking informational display */}
+      <SubscriptionInfo />
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Products</p>
-                <p className="text-3xl font-bold text-gray-900">{stats?.totalProducts || 0}</p>
-              </div>
-              <div className="text-4xl">📦</div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Products</p>
+              <p className="text-3xl font-bold text-gray-900">{stats?.totalProducts || 0}</p>
             </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Low Stock Items</p>
-                <p className="text-3xl font-bold text-orange-600">{stats?.lowStockProducts || 0}</p>
-              </div>
-              <div className="text-4xl">⚠️</div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Customers</p>
-                <p className="text-3xl font-bold text-gray-900">{stats?.totalCustomers || 0}</p>
-              </div>
-              <div className="text-4xl">👥</div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Pending Invoices</p>
-                <p className="text-3xl font-bold text-blue-600">{stats?.pendingInvoices || 0}</p>
-              </div>
-              <div className="text-4xl">📄</div>
-            </div>
+            <div className="text-4xl">📦</div>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link
-              href="/seller/products"
-              className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center"
-            >
-              <div className="text-4xl mb-2">📦</div>
-              <div className="font-semibold text-gray-900">Manage Products</div>
-              <div className="text-sm text-gray-600">View and manage inventory</div>
-            </Link>
-
-            <Link
-              href="/seller/customers"
-              className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center"
-            >
-              <div className="text-4xl mb-2">👥</div>
-              <div className="font-semibold text-gray-900">Manage Customers</div>
-              <div className="text-sm text-gray-600">Customer database</div>
-            </Link>
-
-            <Link
-              href="/seller/invoices"
-              className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center"
-            >
-              <div className="text-4xl mb-2">📄</div>
-              <div className="font-semibold text-gray-900">Create Invoice</div>
-              <div className="text-sm text-gray-600">Generate sales invoices</div>
-            </Link>
-
-            <Link
-              href="/seller/settings"
-              className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center"
-            >
-              <div className="text-4xl mb-2">⚙️</div>
-              <div className="font-semibold text-gray-900">Settings</div>
-              <div className="text-sm text-gray-600">Company settings</div>
-            </Link>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Low Stock Items</p>
+              <p className="text-3xl font-bold text-orange-600">{stats?.lowStockProducts || 0}</p>
+            </div>
+            <div className="text-4xl">⚠️</div>
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-          {recentActivity.length === 0 ? (
-            <div className="text-center text-gray-500 py-8">
-              <p>No recent activity to display</p>
-              <p className="text-sm mt-2">Start by adding products or creating invoices</p>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Customers</p>
+              <p className="text-3xl font-bold text-gray-900">{stats?.totalCustomers || 0}</p>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {recentActivity.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition"
-                >
-                  <div className="text-3xl">{activity.icon}</div>
-                  <div className="flex-1 min-w-0">
-                    {activity.link ? (
-                      <Link href={activity.link} className="hover:underline">
-                        <h4 className="font-semibold text-gray-900">{activity.title}</h4>
-                      </Link>
-                    ) : (
-                      <h4 className="font-semibold text-gray-900">{activity.title}</h4>
-                    )}
-                    <p className="text-sm text-gray-600 truncate">{activity.description}</p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {new Date(activity.timestamp).toLocaleString()}
-                    </p>
-                  </div>
-                  {activity.link && (
-                    <Link
-                      href={activity.link}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                    >
-                      View →
-                    </Link>
-                  )}
-                </div>
-              ))}
+            <div className="text-4xl">👥</div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Pending Invoices</p>
+              <p className="text-3xl font-bold text-blue-600">{stats?.pendingInvoices || 0}</p>
             </div>
-          )}
+            <div className="text-4xl">📄</div>
+          </div>
         </div>
       </div>
+
+      {/* Quick Actions */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Quick Actions</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link
+            href="/seller/products"
+            className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center"
+          >
+            <div className="text-4xl mb-2">📦</div>
+            <div className="font-semibold text-gray-900">Manage Products</div>
+            <div className="text-sm text-gray-600">View and manage inventory</div>
+          </Link>
+
+          <Link
+            href="/seller/customers"
+            className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center"
+          >
+            <div className="text-4xl mb-2">👥</div>
+            <div className="font-semibold text-gray-900">Manage Customers</div>
+            <div className="text-sm text-gray-600">Customer database</div>
+          </Link>
+
+          <Link
+            href="/seller/invoices"
+            className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center"
+          >
+            <div className="text-4xl mb-2">📄</div>
+            <div className="font-semibold text-gray-900">Create Invoice</div>
+            <div className="text-sm text-gray-600">Generate sales invoices</div>
+          </Link>
+
+          <Link
+            href="/seller/settings"
+            className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center"
+          >
+            <div className="text-4xl mb-2">⚙️</div>
+            <div className="font-semibold text-gray-900">Settings</div>
+            <div className="text-sm text-gray-600">Company settings</div>
+          </Link>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+        {recentActivity.length === 0 ? (
+          <div className="text-center text-gray-500 py-8">
+            <p>No recent activity to display</p>
+            <p className="text-sm mt-2">Start by adding products or creating invoices</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {recentActivity.map((activity: Activity) => (
+              <div
+                key={activity.id}
+                className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition"
+              >
+                <div className="text-3xl">{activity.icon}</div>
+                <div className="flex-1 min-w-0">
+                  {activity.link ? (
+                    <Link href={activity.link} className="hover:underline">
+                      <h4 className="font-semibold text-gray-900">{activity.title}</h4>
+                    </Link>
+                  ) : (
+                    <h4 className="font-semibold text-gray-900">{activity.title}</h4>
+                  )}
+                  <p className="text-sm text-gray-600 truncate">{activity.description}</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {new Date(activity.timestamp).toLocaleString()}
+                  </p>
+                </div>
+                {activity.link && (
+                  <Link
+                    href={activity.link}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  >
+                    View →
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

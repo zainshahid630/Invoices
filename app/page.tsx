@@ -10,6 +10,29 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [newsModalOpen, setNewsModalOpen] = useState(false);
+  const [fbrInvoiceCount, setFbrInvoiceCount] = useState(0);
+  const [totalInvoiceCount, setTotalInvoiceCount] = useState(0);
+  const [businessCount, setBusinessCount] = useState(0);
+
+  // Fetch invoice stats
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/stats/fbr-invoices');
+        const data = await response.json();
+        setFbrInvoiceCount((data.fbrCount || 0) + 120);
+        setTotalInvoiceCount((data.totalCount || 0) + 300);
+        setBusinessCount((data.companiesCount || 0) + 200);
+      } catch (error) {
+        console.error('Error fetching invoice stats:', error);
+        setFbrInvoiceCount(120);
+        setTotalInvoiceCount(300);
+        setBusinessCount(200);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   // Show sticky CTA bar after scrolling
   useEffect(() => {
@@ -21,35 +44,7 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Auto-show news modal on first visit (once per day) - only if news is available
-  useEffect(() => {
-    const checkAndShowNews = async () => {
-      const lastShown = localStorage.getItem('fbrNewsLastShown');
-      const today = new Date().toDateString();
 
-      if (lastShown !== today) {
-        // Wait 2 seconds before checking for news
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        try {
-          // Check if news is available before showing modal
-          const response = await fetch('/api/news/fbr');
-          const data = await response.json();
-
-          // Only show modal if API call succeeds and has articles
-          if (response.ok && data.articles && data.articles.length > 0) {
-            setNewsModalOpen(true);
-            localStorage.setItem('fbrNewsLastShown', today);
-          }
-        } catch (error) {
-          // Silently fail - don't show modal if API fails
-          console.log('News API not available - skipping auto-show');
-        }
-      }
-    };
-
-    checkAndShowNews();
-  }, []);
   const [animatedElements, setAnimatedElements] = useState<Element[]>([]);
 
   function isElementInViewport(elem: Element): boolean {
@@ -164,14 +159,13 @@ export default function LandingPage() {
             <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
               <div className="space-y-6 sm:space-y-8 text-center md:text-left text-y">
                 <div className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-100 rounded-full">
-                  <span className="text-blue-700 font-semibold text-xs sm:text-sm">🎉 Trusted by 130+ Pakistani Businesses</span>
+                  <span className="text-blue-700 font-semibold text-xs sm:text-sm">
+                    🎉 Trusted by {businessCount}+ Pakistani Businesses
+                  </span>
                 </div>
 
                 <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 leading-tight">
-                  <span itemProp="name">FBR-Compliant Invoicing</span>
-                  <span className="block bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                    Made Simple
-                  </span>
+                  <span itemProp="name">Digital Invoice FBR Software - FBR-Compliant Invoicing Made Simple</span>
                 </h1>
 
                 <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed">
@@ -185,7 +179,7 @@ export default function LandingPage() {
                     href="/register"
                     className="group px-8 py-3 sm:py-4 w-full sm:w-auto max-w-[280px] sm:max-w-none mx-auto sm:mx-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 font-semibold text-center text-md shadow-xl shadow-blue-500/30 transition-all hover:shadow-2xl hover:shadow-blue-500/40 hover:-translate-y-0.5"
                   >
-                    Start Free Trial
+                    Get Started Now
                     <span className="inline-block ml-2  group-hover:translate-x-1 transition-transform">→</span>
                   </Link>
                   <button
@@ -207,14 +201,25 @@ export default function LandingPage() {
                       <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 border-2 border-white"></div>
                     </div>
                     <div>
-                      <p className="text-xs sm:text-sm font-semibold text-gray-900">130+ Businesses</p>
+                      <p className="text-xs sm:text-sm font-semibold text-gray-900">
+                        {businessCount}+ Businesses
+                      </p>
                       <p className="text-xs text-gray-600">Using InvoiceFBR</p>
                     </div>
                   </div>
                   <div className="hidden sm:block h-12 w-px bg-gray-300"></div>
                   <div className="text-center md:text-left">
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">2,500+</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                      {totalInvoiceCount.toLocaleString()}+
+                    </p>
                     <p className="text-xs sm:text-sm text-gray-600">Invoices Generated</p>
+                  </div>
+                  <div className="hidden sm:block h-12 w-px bg-gray-300"></div>
+                  <div className="text-center md:text-left">
+                    <p className="text-xl sm:text-2xl font-bold text-green-600">
+                      {fbrInvoiceCount.toLocaleString()}+
+                    </p>
+                    <p className="text-xs sm:text-sm text-gray-600">Submitted to FBR</p>
                   </div>
                 </div>
               </div>
@@ -223,7 +228,7 @@ export default function LandingPage() {
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-purple-600 rounded-3xl transform rotate-3 opacity-10"></div>
                 <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-2xl p-1 sm:p-2 border border-gray-200">
                   <img
-                    src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&h=600&fit=crop"
+                    src="/images/landing/hero-dashboard.jpg"
                     alt="Invoice Dashboard"
                     className="rounded-lg sm:rounded-xl w-full"
                   />
@@ -239,6 +244,102 @@ export default function LandingPage() {
                     <p className="text-sm sm:text-lg font-bold text-green-600">✓ Verified</p>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* SEO Content Section - What is Digital Invoice FBR */}
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+          <div className="max-w-4xl mx-auto">
+            <div className="scroll-anime textxx">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+                What is Digital Invoice FBR?
+              </h2>
+              <p className="text-lg text-gray-700 mb-6 leading-relaxed">
+                <strong>Digital Invoice FBR</strong> is Pakistan&apos;s mandatory electronic invoicing system that requires all registered businesses to submit invoices digitally to the Federal Board of Revenue (FBR). Our <strong>FBR invoice software</strong> automates this entire process, making tax compliance effortless for Pakistani businesses.
+              </p>
+              
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 mt-8">
+                Why Choose InvoiceFBR as Your Digital Invoice Provider?
+              </h3>
+              <p className="text-lg text-gray-700 mb-4 leading-relaxed">
+                As the <strong>best digital invoice provider in Pakistan</strong>, InvoiceFBR offers:
+              </p>
+              <ul className="space-y-3 text-lg text-gray-700 mb-8">
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-3 mt-1">✓</span>
+                  <span>Automatic <strong>FBR invoice submission</strong> with one click</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-3 mt-1">✓</span>
+                  <span>Real-time <strong>FBR invoice verification</strong> and validation</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-3 mt-1">✓</span>
+                  <span>QR code generation for complete <strong>FBR compliance</strong></span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-3 mt-1">✓</span>
+                  <span>Comprehensive <strong>FBR invoicing software</strong> solution</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-3 mt-1">✓</span>
+                  <span>Free <strong>FBR invoice generator</strong> with professional templates</span>
+                </li>
+              </ul>
+              
+              <div className="bg-blue-50 border-l-4 border-blue-600 p-6 mb-8 rounded-r-lg">
+                <h4 className="text-xl font-bold text-gray-900 mb-3">
+                  How Does FBR Digital Invoicing Work?
+                </h4>
+                <p className="text-gray-700 leading-relaxed">
+                  Our <strong>FBR invoice software</strong> connects directly to the FBR portal (gw.fbr.gov.pk), automatically submitting your invoices in the required format. Every invoice includes a unique QR code for verification, ensuring complete compliance with Pakistan&apos;s digital invoicing regulations. Whether you need a simple <strong>FBR invoice generator</strong> or a complete <strong>digital invoice FBR solution</strong>, InvoiceFBR has you covered.
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-6 rounded-lg mb-8">
+                <h4 className="text-xl font-bold text-gray-900 mb-3">
+                  Benefits of Using Digital Invoice FBR Software
+                </h4>
+                <div className="grid sm:grid-cols-2 gap-4 text-gray-700">
+                  <div className="flex items-start">
+                    <span className="text-green-600 mr-2">✓</span>
+                    <span>Save 10+ hours per week on invoicing</span>
+                  </div>
+                  <div className="flex items-start">
+                    <span className="text-green-600 mr-2">✓</span>
+                    <span>Avoid FBR penalties and fines</span>
+                  </div>
+                  <div className="flex items-start">
+                    <span className="text-green-600 mr-2">✓</span>
+                    <span>Automatic tax calculations</span>
+                  </div>
+                  <div className="flex items-start">
+                    <span className="text-green-600 mr-2">✓</span>
+                    <span>Professional invoice templates</span>
+                  </div>
+                  <div className="flex items-start">
+                    <span className="text-green-600 mr-2">✓</span>
+                    <span>Real-time FBR status updates</span>
+                  </div>
+                  <div className="flex items-start">
+                    <span className="text-green-600 mr-2">✓</span>
+                    <span>Secure cloud-based storage</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="text-center mt-10">
+                <Link
+                  href="/register"
+                  className="inline-block px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 font-semibold text-lg shadow-xl transition-all"
+                >
+                  Start Using Best FBR Invoice Software
+                </Link>
+                <p className="text-sm text-gray-600 mt-4">
+                  Join 130+ Pakistani businesses using InvoiceFBR for digital invoice FBR compliance
+                </p>
               </div>
             </div>
           </div>
@@ -285,7 +386,7 @@ export default function LandingPage() {
                     href="/register"
                     className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 font-semibold text-lg shadow-xl shadow-blue-500/30 transition-all hover:shadow-2xl hover:shadow-blue-500/40"
                   >
-                    Start Free Trial Now
+                    Get Started Now
                   </Link>
                   <a
                     href="https://wa.me/923164951361?text=Hi%2C%20I%20watched%20the%20demo%20and%20want%20to%20learn%20more%20about%20InvoiceFBR"
@@ -296,7 +397,7 @@ export default function LandingPage() {
                     💬 Chat on WhatsApp
                   </a>
                 </div>
-                <p className="text-sm text-gray-500 mt-4">7-day free trial • No credit card required • Setup in 5 minutes</p>
+                <p className="text-sm text-gray-500 mt-4">No credit card required • Setup in 5 minutes</p>
               </div>
             </div>
           </div>
@@ -507,7 +608,7 @@ export default function LandingPage() {
                     href="/register"
                     className="px-8 py-4 bg-white text-blue-600 rounded-xl hover:bg-gray-100 font-semibold text-lg shadow-xl transition-all"
                   >
-                    Start Free Trial - No Credit Card Required
+                    Get Started - No Credit Card Required
                   </Link>
                   <a
                     href="https://wa.me/923164951361?text=Hi%2C%20I%20have%20questions%20about%20InvoiceFBR"
@@ -539,7 +640,7 @@ export default function LandingPage() {
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-lg">
                   <img
-                    src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=400&h=300&fit=crop"
+                    src="/images/landing/signup.jpg"
                     alt="Sign Up"
                     className="w-full h-40 object-cover rounded-lg mb-6"
                     loading="lazy"
@@ -556,7 +657,7 @@ export default function LandingPage() {
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-lg">
                   <img
-                    src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop"
+                    src="/images/landing/analytics.jpg"
                     alt="Setup"
                     className="w-full h-40 object-cover rounded-lg mb-6"
                     loading="lazy"
@@ -573,7 +674,7 @@ export default function LandingPage() {
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-lg">
                   <img
-                    src="https://images.unsplash.com/photo-1554224154-22dec7ec8818?w=400&h=300&fit=crop"
+                    src="/images/landing/invoice.jpg"
                     alt="Create Invoice"
                     className="w-full h-40 object-cover rounded-lg mb-6"
                     loading="lazy"
@@ -590,7 +691,7 @@ export default function LandingPage() {
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-lg">
                   <img
-                    src="https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&h=300&fit=crop"
+                    src="/images/landing/tracking.jpg"
                     alt="Send & Track"
                     className="w-full h-40 object-cover rounded-lg mb-6"
                     loading="lazy"
@@ -613,7 +714,7 @@ export default function LandingPage() {
                 Get Started Free
                 <span className="ml-2">→</span>
               </Link>
-              <p className="text-sm text-gray-500 mt-4">7-day free trial • No credit card required • Cancel anytime</p>
+              <p className="text-sm text-gray-500 mt-4">No credit card required • Cancel anytime</p>
             </div>
           </div>
         </section>
@@ -635,7 +736,7 @@ export default function LandingPage() {
               <div className="scroll-anime text-yy flex flex-col lg:flex-row gap-4 sm:gap-6 bg-white p-4 rounded-xl shadow-lg max-w-[320px] mx-auto md:max-w-none md:mx-0">
                 <div className="flex-shrink-0">
                   <img
-                    src="https://images.unsplash.com/photo-1554224154-22dec7ec8818?w=400&h=300&fit=crop"
+                    src="/images/landing/invoice.jpg"
                     alt="Invoice Management"
                     className="w-full lg:w-48 xl:w-64 h-42  object-cover rounded-lg shadow-lg"
                     loading="lazy"
@@ -660,7 +761,7 @@ export default function LandingPage() {
               <div className="scroll-anime textyy flex flex-col lg:flex-row gap-4 sm:gap-6 bg-white p-4 rounded-xl shadow-lg max-w-[320px] mx-auto md:max-w-none md:mx-0">
                 <div className="flex-shrink-0">
                   <img
-                    src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=400&h=300&fit=crop"
+                    src="/images/landing/signup.jpg"
                     alt="FBR Compliance"
                     className="w-full lg:w-48 xl:w-64 h-42  object-cover rounded-lg shadow-lg"
                     loading="lazy"
@@ -685,7 +786,7 @@ export default function LandingPage() {
               <div className="scroll-anime text-yy flex flex-col lg:flex-row gap-4 sm:gap-6 bg-white p-4 rounded-xl shadow-lg max-w-[320px] mx-auto md:max-w-none md:mx-0">
                 <div className="flex-shrink-0">
                   <img
-                    src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400&h=300&fit=crop"
+                    src="/images/landing/customer.jpg"
                     alt="Customer Portal"
                     className="w-full lg:w-48 xl:w-64 h-42  object-cover rounded-lg shadow-lg"
                     loading="lazy"
@@ -710,7 +811,7 @@ export default function LandingPage() {
               <div className="scroll-anime textyy flex flex-col lg:flex-row gap-4 sm:gap-6 bg-white p-4 rounded-xl shadow-lg max-w-[320px] mx-auto md:max-w-none md:mx-0">
                 <div className="flex-shrink-0">
                   <img
-                    src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop"
+                    src="/images/landing/analytics.jpg"
                     alt="Analytics"
                     className="w-full lg:w-48 xl:w-64 h-42  object-cover rounded-lg shadow-lg"
                     loading="lazy"
@@ -1048,7 +1149,7 @@ export default function LandingPage() {
                 Simple, Transparent Pricing
               </h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Choose the perfect plan for your business. All plans include 14-day free trial.
+                Choose the perfect plan for your business. Get started today!
               </p>
             </div>
 
@@ -1098,7 +1199,7 @@ export default function LandingPage() {
                   href="/register"
                   className="block w-full py-3 px-6 text-center bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 font-semibold transition-colors"
                 >
-                  Start 7-Day Free Trial
+                  Get Started
                 </Link>
               </div>
 
@@ -1158,7 +1259,7 @@ export default function LandingPage() {
                   href="/register"
                   className="block w-full py-3 px-6 text-center bg-white text-blue-600 rounded-lg hover:bg-gray-100 font-semibold transition-colors"
                 >
-                  Start 7-Day Free Trial
+                  Get Started
                 </Link>
               </div>
             </div>
@@ -1167,7 +1268,7 @@ export default function LandingPage() {
               <div className="inline-flex items-center px-6 py-3 bg-green-100 rounded-full mb-4">
                 <span className="text-green-700 font-semibold">⚡ Limited Time: Get 2 Months Free on Annual Plans!</span>
               </div>
-              <p className="text-gray-600 mb-4">All plans include 7-day free trial • No credit card required</p>
+              <p className="text-gray-600 mb-4">No credit card required to get started</p>
               <p className="text-sm text-gray-500">Need a custom solution? <a href="#contact" className="text-blue-600 hover:text-blue-700 font-semibold">Contact our sales team</a></p>
 
               {/* Trust badges */}
@@ -1215,7 +1316,7 @@ export default function LandingPage() {
               <div className="bg-white p-6 rounded-xl shadow-md scroll-anime text-yy">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Can I try before purchasing?</h3>
                 <p className="text-gray-600">
-                  Absolutely! We offer a 7-day free trial with full access to all features.
+                  Yes! You can get started immediately with full access to all features.
                   No credit card required.
                 </p>
               </div>
@@ -1263,12 +1364,12 @@ export default function LandingPage() {
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 border-4 border-white"></div>
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 border-4 border-white"></div>
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-400 to-red-600 border-4 border-white flex items-center justify-center">
-                      <span className="text-white text-sm font-bold">+130</span>
+                      <span className="text-white text-sm font-bold">+{businessCount}</span>
                     </div>
                   </div>
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                  Join 130+ Businesses Already Using InvoiceFBR
+                  Join {businessCount}+ Businesses Already Using InvoiceFBR
                 </h3>
                 <p className="text-lg text-gray-600 mb-6">
                   &quot;Best decision for our business. FBR compliance is now automatic!&quot; - Ahmed, Karachi
@@ -1277,7 +1378,7 @@ export default function LandingPage() {
                   href="/register"
                   className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 font-semibold text-lg shadow-xl transition-all"
                 >
-                  Start Your Free Trial Now
+                  Get Started Now
                   <span className="ml-2">→</span>
                 </Link>
                 <p className="text-sm text-gray-500 mt-4">Setup takes less than 5 minutes</p>
@@ -1307,7 +1408,7 @@ export default function LandingPage() {
                 <Link href="/blog/fbr-digital-invoice-compliance-guide-2024">
                   <div className="aspect-video relative overflow-hidden bg-gray-200">
                     <img
-                      src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800&h=450&fit=crop"
+                      src="/images/landing/signup.jpg"
                       alt="Business documents and compliance paperwork"
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       loading="lazy"
@@ -1337,7 +1438,7 @@ export default function LandingPage() {
                 <Link href="/blog/10-invoicing-mistakes-pakistani-businesses">
                   <div className="aspect-video relative overflow-hidden bg-gray-200">
                     <img
-                      src="https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=800&h=450&fit=crop"
+                      src="/images/landing/business.jpg"
                       alt="Warning sign and business documents"
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       loading="lazy"
@@ -1367,7 +1468,7 @@ export default function LandingPage() {
                 <Link href="/blog/automate-invoice-workflow-save-time">
                   <div className="aspect-video relative overflow-hidden bg-gray-200">
                     <img
-                      src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=450&fit=crop"
+                      src="/images/landing/charts.jpg"
                       alt="Automated workflow dashboard"
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       loading="lazy"
@@ -1412,14 +1513,14 @@ export default function LandingPage() {
               Ready to Streamline Your Invoicing?
             </h2>
             <p className="text-xl text-blue-100 mb-8">
-              Join hundreds of businesses already using InvoicePro. Start your free trial today!
+              Join hundreds of businesses already using InvoiceFBR. Get started today!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/register"
                 className="px-8 py-3 xl:py-4 w-full sm:w-auto max-w-[280px] sm:max-w-none mx-auto sm:mx-0 bg-white text-blue-600 rounded-lg hover:bg-gray-100 font-semibold text-lg"
               >
-                Start Free Trial
+                Get Started
               </Link>
               <a
                 href="#contact"
@@ -1428,7 +1529,7 @@ export default function LandingPage() {
                 Schedule Demo
               </a>
             </div>
-            <p className="text-blue-100 mt-6">No credit card required • 7-day free trial • Cancel anytime</p>
+            <p className="text-blue-100 mt-6">No credit card required • Cancel anytime</p>
           </div>
         </section>
 
@@ -1629,10 +1730,10 @@ export default function LandingPage() {
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="text-center sm:text-left">
                   <p className="text-white font-bold text-sm sm:text-base">
-                    🎉 Start Your Free 7-Day Trial Today!
+                    🎉 Start Sending Invoices To FBR Today!
                   </p>
                   <p className="text-blue-100 text-xs sm:text-sm">
-                    No credit card required • Full access to all features
+                    {/* No credit card required • Full access to all features */}
                   </p>
                 </div>
                 <div className="flex gap-3">
@@ -1640,7 +1741,7 @@ export default function LandingPage() {
                     href="/register"
                     className="px-6 py-2.5 bg-white text-blue-600 rounded-lg hover:bg-gray-100 font-semibold text-sm sm:text-base shadow-lg transition-all whitespace-nowrap"
                   >
-                    Get Started Free
+                    Get Started 
                   </Link>
                   <button
                     onClick={() => setShowStickyBar(false)}

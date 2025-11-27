@@ -1,7 +1,37 @@
 /* eslint-disable @next/next/no-img-element */
 import { InvoiceTemplateProps } from './types';
 
-export function ModernTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplateProps) {
+export function ModernTemplate({ 
+  invoice, 
+  company, 
+  qrCodeUrl, 
+  isCommercialInvoice = false,
+  commercialHsCode = '',
+  commercialUom = ''
+}: InvoiceTemplateProps) {
+  // Get most frequent HS Code and UOM from items
+  const getMostFrequent = (arr: string[]) => {
+    const frequency: { [key: string]: number } = {};
+    arr.forEach(val => {
+      if (val) frequency[val] = (frequency[val] || 0) + 1;
+    });
+    return Object.keys(frequency).reduce((a, b) =>
+      frequency[a] > frequency[b] ? a : b, arr[0] || ''
+    );
+  };
+
+  const hsCodes = invoice.items.map(item => item.hs_code).filter(Boolean);
+  const uoms = invoice.items.map(item => item.uom).filter(Boolean);
+  const mostFrequentHsCode = hsCodes.length > 0 ? getMostFrequent(hsCodes) : '';
+  const mostFrequentUom = uoms.length > 0 ? getMostFrequent(uoms) : '';
+
+  // Use commercial values if this is a commercial invoice
+  const displayHsCode = isCommercialInvoice ? commercialHsCode : mostFrequentHsCode;
+  const displayUom = isCommercialInvoice ? commercialUom : mostFrequentUom;
+  const headerColor = isCommercialInvoice ? 'from-purple-600 to-purple-800' : 'from-blue-600 to-blue-800';
+  const headerTextColor = isCommercialInvoice ? 'text-purple-100' : 'text-blue-100';
+  const headerSubTextColor = isCommercialInvoice ? 'text-purple-200' : 'text-blue-200';
+
   return (
     <div className="max-w-4xl mx-auto bg-white shadow-lg print:shadow-none flex flex-col min-h-[1120px] a4-compact">
 
@@ -9,11 +39,15 @@ export function ModernTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplateP
       <div className="invoice-content-wrapper flex-grow">
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4">
+        <div className={`bg-gradient-to-r ${headerColor} text-white p-4`}>
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-2xl font-bold mb-1">INVOICE</h1>
-              <p className="text-blue-100 text-sm">{invoice.invoice_number}</p>
+              <h1 className="text-2xl font-bold mb-1">
+                {isCommercialInvoice ? 'COMMERCIAL INVOICE' : 'INVOICE'}
+              </h1>
+              <p className={`${headerTextColor} text-sm`}>{invoice.invoice_number}</p>
+              {displayHsCode && <p className={`${headerSubTextColor} text-xs mt-1`}>HS Code: {displayHsCode}</p>}
+              {displayUom && <p className={`${headerSubTextColor} text-xs`}>UOM: {displayUom}</p>}
             </div>
             <div className="text-right">
               {company?.logo_url && (
@@ -47,7 +81,9 @@ export function ModernTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplateP
           <div>
             <h2 className="text-xs font-semibold text-gray-500 uppercase mb-1">Bill To</h2>
             <div className="space-y-0.5 text-xs">
-              <p className="text-base font-bold text-gray-900">{invoice.buyer_name}</p>
+              {invoice.buyer_name !== invoice.buyer_business_name && (
+                <p className="text-base font-bold text-gray-900">{invoice.buyer_name}</p>
+              )}
               {invoice.buyer_business_name && <p>{invoice.buyer_business_name}</p>}
               {invoice.buyer_ntn_cnic && <p>NTN/CNIC: {invoice.buyer_ntn_cnic}</p>}
               {invoice.buyer_province && <p>Province: {invoice.buyer_province}</p>}
@@ -72,15 +108,36 @@ export function ModernTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplateP
             </div>
           )}
 
+          {invoice.dc_code && (
+            <div>
+              <p className="font-semibold text-gray-500 uppercase">DC Code</p>
+              <p className="font-bold text-gray-900 text-sm">{invoice.dc_code}</p>
+            </div>
+          )}
+
+          {invoice.items[0]?.hs_code && (
+            <div>
+              <p className="font-semibold text-gray-500 uppercase">HS Code</p>
+              <p className="font-bold text-gray-900 text-sm">{invoice.items[0].hs_code}</p>
+            </div>
+          )}
+
+          {invoice.items[0]?.uom && (
+            <div>
+              <p className="font-semibold text-gray-500 uppercase">UOM</p>
+              <p className="font-bold text-gray-900 text-sm">{invoice.items[0].uom}</p>
+            </div>
+          )}
+
           <div>
             <p className="font-semibold text-gray-500 uppercase">Type</p>
             <p className="font-bold text-gray-900 text-sm">{invoice.invoice_type}</p>
           </div>
 
-          <div>
+          {/* <div>
             <p className="font-semibold text-gray-500 uppercase">Status</p>
             <p className="font-bold text-green-600 text-sm uppercase">{invoice.payment_status}</p>
-          </div>
+          </div> */}
         </div>
 
         {/* Items Table */}
@@ -89,8 +146,6 @@ export function ModernTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplateP
             <thead>
               <tr className="border-b border-gray-300">
                 <th className="text-left py-1 font-bold">Description</th>
-                <th className="text-left py-1 font-bold">HS Code</th>
-                <th className="text-center py-1 font-bold">UOM</th>
                 <th className="text-right py-1 font-bold">Unit Price</th>
                 <th className="text-right py-1 font-bold">Qty</th>
                 <th className="text-right py-1 font-bold">Amount</th>
@@ -100,8 +155,6 @@ export function ModernTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplateP
               {invoice.items.map((item) => (
                 <tr key={item.id} className="border-b border-gray-200">
                   <td className="py-1">{item.item_name}</td>
-                  <td className="py-1">{item.hs_code || '-'}</td>
-                  <td className="py-1 text-center">{item.uom}</td>
                   <td className="py-1 text-right">
                     PKR {(+item.unit_price).toLocaleString()}
                   </td>
@@ -129,9 +182,9 @@ export function ModernTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplateP
       {/* BOTTOM SECTION (ALWAYS AT END) */}
       <div className="grid grid-cols-2 gap-4 border-t-2 border-gray-200 p-4 text-xs">
 
-        {/* QR Code and FBR Logo */}
+        {/* QR Code and FBR Logo - Hidden for Commercial Invoice */}
         <div className="flex items-center justify-center">
-          {qrCodeUrl && invoice.status === 'fbr_posted' && invoice.fbr_invoice_number ? (
+          {!isCommercialInvoice && qrCodeUrl && invoice.status === 'fbr_posted' && invoice.fbr_invoice_number ? (
             <div className="flex flex-col items-center">
               <div className="flex items-center gap-2">
                 <img src={qrCodeUrl} alt="QR Code" className="w-16 h-16 border border-black" />
@@ -143,11 +196,13 @@ export function ModernTemplate({ invoice, company, qrCodeUrl }: InvoiceTemplateP
               </div>
               <p className="text-[8px] mt-1 font-semibold">{invoice.fbr_invoice_number}</p>
             </div>
-          ) : (
-            <div className="text-center text-gray-400 text-xs">
-              <div className="w-28 h-28 border-2 border-dashed border-gray-300 mb-1"></div>
-              QR available after FBR posting
+          ) : isCommercialInvoice ? (
+            <div className="text-center text-gray-500">
+              <p className="text-xs">Commercial Invoice</p>
+              <p className="text-[10px]">For customs and trade purposes</p>
             </div>
+          ) : (
+        <></>
           )}
         </div>
 

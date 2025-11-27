@@ -112,6 +112,9 @@ export async function PUT(
       customer_id,
       invoice_number,
       po_number,
+      dc_code,
+      hs_code,
+      uom,
       invoice_date,
       invoice_type,
       scenario,
@@ -150,8 +153,8 @@ export async function PUT(
     }
 
     if (currentInvoice.status !== 'draft' && currentInvoice.status !== 'verified') {
-      return NextResponse.json({ 
-        error: 'Only draft and verified invoices can be edited. Current status: ' + currentInvoice.status 
+      return NextResponse.json({
+        error: 'Only draft and verified invoices can be edited. Current status: ' + currentInvoice.status
       }, { status: 400 });
     }
 
@@ -217,6 +220,7 @@ export async function PUT(
         customer_id: customer_id || null,
         invoice_number,
         po_number: po_number || null,
+        dc_code: dc_code || null,
         invoice_date,
         invoice_type,
         scenario,
@@ -253,13 +257,15 @@ export async function PUT(
       product_id: item.product_id || null,
       item_name: item.item_name,
       hs_code: item.hs_code || '',
-      uom: item.uom,
+      uom: item.uom || 'Numbers, pieces, units',
+      sale_type: item.sale_type || 'Goods at standard rate (default)',
       unit_price: parseFloat(item.unit_price).toFixed(2),
       quantity: parseFloat(item.quantity).toFixed(2),
       line_total: (parseFloat(item.unit_price) * parseFloat(item.quantity)).toFixed(2),
     }));
 
-    console.log(`Updating invoice ${params.id} with ${invoiceItems.length} items`);
+    console.log(`📦 Updating invoice ${params.id} with ${invoiceItems.length} items`);
+    console.log('📦 Invoice items data:', JSON.stringify(invoiceItems, null, 2));
 
     // Delete existing invoice items
     const { error: deleteItemsError } = await supabase
@@ -269,8 +275,8 @@ export async function PUT(
 
     if (deleteItemsError) {
       console.error('Error deleting old invoice items:', deleteItemsError);
-      return NextResponse.json({ 
-        error: 'Failed to delete old items: ' + deleteItemsError.message 
+      return NextResponse.json({
+        error: 'Failed to delete old items: ' + deleteItemsError.message
       }, { status: 500 });
     }
 
@@ -283,7 +289,7 @@ export async function PUT(
     if (itemsError) {
       console.error('Error creating new invoice items:', itemsError);
       console.error('Items that failed to insert:', invoiceItems);
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Failed to create new items: ' + itemsError.message,
         details: 'Items were deleted but could not be recreated. Please try again.'
       }, { status: 500 });

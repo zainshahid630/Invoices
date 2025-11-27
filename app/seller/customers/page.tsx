@@ -269,7 +269,8 @@ export default function CustomersPage() {
     setImportResult(null);
   };
 
-  if (isLoading || !user) {
+  // Show initial loading only on first load (no user data yet)
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">Loading...</div>
     );
@@ -300,7 +301,7 @@ export default function CustomersPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 transition-opacity ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-sm text-gray-600">Total Customers</div>
           <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
@@ -394,7 +395,16 @@ export default function CustomersPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {customers.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+                      <p className="text-gray-500 text-sm">Loading customers...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : customers.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                     {searchTerm || filterActive !== 'all'

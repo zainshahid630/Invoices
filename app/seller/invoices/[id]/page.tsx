@@ -82,6 +82,8 @@ export default function InvoiceDetailPage() {
   const [previewPayload, setPreviewPayload] = useState<any>(null);
   const [validationStep, setValidationStep] = useState<'preview' | 'validating' | 'result'>('preview');
   const [loadingPayload, setLoadingPayload] = useState(false);
+  const [commercialInvoiceExists, setCommercialInvoiceExists] = useState(false);
+  const [checkingCommercialInvoice, setCheckingCommercialInvoice] = useState(true);
 
   useEffect(() => {
     const session = localStorage.getItem('seller_session');
@@ -95,7 +97,25 @@ export default function InvoiceDetailPage() {
     setCompanyId(userData.company_id);
     loadInvoice(userData.company_id);
     loadSettings(userData.company_id);
+    checkCommercialInvoice(userData.company_id);
   }, [router, params.id]);
+
+  const checkCommercialInvoice = async (companyId: string) => {
+    try {
+      setCheckingCommercialInvoice(true);
+      const response = await fetch(
+        `/api/seller/invoices/${params.id}/commercial-invoice/check?company_id=${companyId}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setCommercialInvoiceExists(data.exists);
+      }
+    } catch (error) {
+      console.error('Error checking commercial invoice:', error);
+    } finally {
+      setCheckingCommercialInvoice(false);
+    }
+  };
 
   const loadInvoice = async (companyId: string) => {
     try {
@@ -516,6 +536,20 @@ export default function InvoiceDetailPage() {
               🖨️ Print Invoice
             </Link>
 
+            {/* Commercial Invoice Button */}
+            {!checkingCommercialInvoice && (
+              <Link
+                href={`/seller/invoices/${params.id}/commercial-invoice/manage`}
+                className={`px-4 py-2 text-white rounded-lg font-semibold flex items-center gap-2 ${
+                  commercialInvoiceExists 
+                    ? 'bg-blue-600 hover:bg-blue-700' 
+                    : 'bg-purple-600 hover:bg-purple-700'
+                }`}
+              >
+                {commercialInvoiceExists ? '✏️ Edit Commercial Invoice' : '📄 Make Commercial Invoice'}
+              </Link>
+            )}
+
             {/* WhatsApp Button */}
             <button
               onClick={() => {
@@ -529,6 +563,18 @@ export default function InvoiceDetailPage() {
               className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold flex items-center gap-2"
             >
               💬 Send via WhatsApp
+            </button>
+
+            {/* Copy Link Button */}
+            <button
+              onClick={() => {
+                const publicLink = `${window.location.origin}/preview/invoice?id=${params.id}`;
+                navigator.clipboard.writeText(publicLink);
+                toast.success('Link Copied!', 'Invoice link copied to clipboard. Anyone can view this invoice.');
+              }}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold flex items-center gap-2"
+            >
+              🔗 Copy Link
             </button>
           </div>
         </div>
@@ -874,6 +920,8 @@ export default function InvoiceDetailPage() {
                 </label>
                 <input
                   type="number"
+                  onWheel={(e) => e.currentTarget.blur()}
+
                   step="0.01"
                   min="0"
                   max={invoice.total_amount}

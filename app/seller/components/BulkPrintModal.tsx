@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { ModernTemplate, ExcelTemplate, ClassicTemplate, LetterheadTemplate } from '@/components/invoice-templates';
+import { ModernTemplate, ExcelTemplate, ClassicTemplate, LetterheadTemplate, DCTemplate } from '@/components/invoice-templates';
 
 interface BulkPrintModalProps {
   selectedInvoices: string[];
@@ -205,6 +205,9 @@ export default function BulkPrintModal({ selectedInvoices, onClose, onPrint }: B
                 topSpace={letterheadTopSpace}
                 showQr={letterheadShowQr}
               />
+            )}
+            {template === 'dc' && (
+              <DCTemplate invoice={invoice} company={company} qrCodeUrl={getQrCodeUrl(invoice.id)} />
             )}
           </div>
         ))}
